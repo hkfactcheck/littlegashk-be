@@ -1,0 +1,24 @@
+server.port: 80
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          autoconfigure: INFO
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.us-east-2.amazonaws.com/us-east-2_1a93fLHHU
+
+cloud:
+  aws:
+    region:
+      static: us-east-2
+    stack:
+      auto: false
+    # For dynamo access
+    credentials:
+      access-key: AKIA3DGYV26JRGOF3Q5T
+      secret-key: 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
