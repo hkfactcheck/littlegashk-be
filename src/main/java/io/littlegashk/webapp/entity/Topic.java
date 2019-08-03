@@ -2,6 +2,7 @@ package io.littlegashk.webapp.entity;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import io.swagger.annotations.ApiModelProperty;
+import jdk.jfr.EventType;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
@@ -63,7 +64,8 @@ public class Topic {
     @DynamoDbTypeConvertedLocalDate
     private LocalDate eventDateTime;
 
-    private String type; //todo: enum
+    @DynamoDBTypeConvertedEnum
+    private EntryType type;
 
     @DynamoDBTypeConvertedJson
     private List<String> relatedFiles;

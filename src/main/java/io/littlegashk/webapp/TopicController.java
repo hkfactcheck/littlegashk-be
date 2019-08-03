@@ -41,13 +41,24 @@ public class TopicController {
 
     @ApiOperation("get topic progresses")
     @GetMapping("/{tid}/progress")
-    public ResponseEntity<List<Topic>> getAllTopicEvent(@PathVariable String tid){
+    public ResponseEntity<List<Topic>> getAllTopicProgress(@PathVariable String tid){
 
         List<Topic> progressItems =  new LinkedList<>();
         repository.getProgressByTopicId(tid).iterator().forEachRemaining(progressItems::add);
         progressItems.sort(Comparator.comparing(Topic::getEventDateTime));
 
         return ResponseEntity.ok(progressItems);
+    }
+
+    @ApiOperation("get public responses on a topic")
+    @GetMapping("/{tid}/response")
+    public ResponseEntity<List<Topic>> getAllTopicResponse(@PathVariable String tid){
+
+        List<Topic> responseItems =  new LinkedList<>();
+        repository.getPublicResponseByTopicId(tid).iterator().forEachRemaining(responseItems::add);
+        responseItems.sort(Comparator.comparing(Topic::getEventDateTime));
+
+        return ResponseEntity.ok(responseItems);
     }
 
 }

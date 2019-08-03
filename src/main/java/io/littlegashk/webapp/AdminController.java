@@ -1,5 +1,6 @@
 package io.littlegashk.webapp;
 
+import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.repository.TopicRepository;
@@ -28,6 +29,7 @@ public class AdminController {
         if(topic.getGroup()==null){
             topic.setGroup("DEFAULT");
         }
+        topic.setType(EntryType.TOPIC);
         topicRepository.save(topic);
         return ResponseEntity.ok(null);
     }
@@ -42,7 +44,7 @@ public class AdminController {
         db.setTags(topic.getTags());
         db.setReferences(topic.getReferences());
         db.setRelatedTopics(topic.getRelatedTopics());
-        db.setType(topic.getType());
+        db.setType(EntryType.TOPIC);
         topicRepository.save(db);
         return ResponseEntity.ok(null);
     }
@@ -52,6 +54,17 @@ public class AdminController {
     public ResponseEntity<?> addProgress(HttpServletRequest req, @RequestBody Topic topic){
         topic.setGroup(null); //important
         topic.setRecordId("progress-" + UUID.randomUUID().toString());
+        topic.setType(EntryType.PROGRESS);
+        topicRepository.save(topic);
+        return ResponseEntity.ok(null);
+    }
+
+    @ApiOperation("insert a public response")
+    @PostMapping("/response")
+    public ResponseEntity<?> addResponse(HttpServletRequest req, @RequestBody Topic topic){
+        topic.setGroup(null); //important
+        topic.setRecordId("response-" + UUID.randomUUID().toString());
+        topic.setType(EntryType.PUBLIC_RESPONSE);
         topicRepository.save(topic);
         return ResponseEntity.ok(null);
     }
