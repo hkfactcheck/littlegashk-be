@@ -19,7 +19,7 @@ public class TopicId implements Serializable {
     private String recordId;
 
     public static TopicId of(String id){
-        return new TopicId(id, "META");
+        return new TopicId(id, "TOP");
     }
 
     @Override

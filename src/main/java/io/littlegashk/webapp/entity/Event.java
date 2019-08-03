@@ -10,7 +10,7 @@ import org.springframework.data.annotation.Id;
 import java.time.LocalDate;
 import java.util.Set;
 
-@DynamoDBTable(tableName = "fchk")
+@DynamoDBTable(tableName = "littlegas")
 @Data
 public class Event {
 

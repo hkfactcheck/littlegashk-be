@@ -16,7 +16,7 @@ public class SpringConfiguration {
                 new DefaultFormattingConversionService(false);
 
         DateTimeFormatterRegistrar registrar = new DateTimeFormatterRegistrar();
-        registrar.setDateFormatter(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        registrar.setDateFormatter(DateTimeFormatter.ISO_LOCAL_DATE);
         registrar.registerFormatters(conversionService);
 
         return conversionService;

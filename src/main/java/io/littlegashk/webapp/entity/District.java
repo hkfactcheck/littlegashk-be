@@ -5,7 +5,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 
 @Data
-@DynamoDBTable(tableName = "fchk")
+@DynamoDBTable(tableName = "littlegas")
 @EqualsAndHashCode
 public class District {
 
