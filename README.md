@@ -1,7 +1,4 @@
-hkfactcheck backend module
-
-
-## hkfactcheck backend module
+## LITTLE-GAS-BOOK backend module
 
 This is a spring boot project intended to be run within AWS architecture.
 
@@ -17,7 +14,7 @@ The application should start and you can checkout the swagger doc by navigating 
 
 ### About your local DynamoDB
 
-When application starts, it will install schema and populate your local DB with static district data (see `area_setup.json`).
+When application starts, it will install schema as written in `DynamoDbSchemaInitializer.java`
 
 
 ### What about on AWS?
