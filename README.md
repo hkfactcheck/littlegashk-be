@@ -1,6 +1,6 @@
 ## LITTLE-GAS-BOOK backend module
 
-This is a spring boot project intended to be run within AWS architecture.
+This is a spring boot project intended to be run within AWS architecture. 
 
 ### Setup local workspace
 
@@ -29,6 +29,10 @@ To set it up, you have to
 5. Put the jar file (`mvn clean install`) there. Kick start the jar
 
 (Sorry it is super brief above, those without AWS experience will need to .... well.... spend some time)
+
+### Build and deployment pipeline
+
+(TBC)
 
 ### One final word
 
