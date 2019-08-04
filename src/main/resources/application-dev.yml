@@ -3,6 +3,10 @@ server:
   ssl:
     enabled: false
 
+logging:
+  level:
+    root: debug
+
 dynamodb:
   endpoint: http://localhost:8000
 

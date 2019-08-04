@@ -11,24 +11,15 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TopicId implements Serializable {
+public class TagTopicId implements Serializable {
 
     @DynamoDBHashKey
-    private String id;
+    private String tag;
     @DynamoDBRangeKey
-    private String recordId;
+    private String topicRecordId;
 
-    public static TopicId of(String topicId){
-        return new TopicId(topicId, "TOP");
+    public static TagTopicId of(String tag, String topicId, String recordId){
+
+        return new TagTopicId(tag, topicId+ "|" + recordId);
     }
-
-    public static TopicId of(String topicId, String recordId){
-        return new TopicId(topicId, recordId);
-    }
-
-    @Override
-    public String toString(){
-        return id;
-    }
-
 }

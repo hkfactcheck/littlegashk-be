@@ -24,11 +24,11 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
         ListTablesResult listTablesResult = db.listTables();
         if (!listTablesResult.getTableNames().contains(TABLE_LITTLEGAS)) {
             log.info("Table not found, creating....");
-            GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex().withIndexName("meta-index")
+            GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex().withIndexName("group-index")
                                                                                   .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
-                                                                                                                       .withAttributeName("sid"),
+                                                                                                                       .withAttributeName("group"),
                                                                                                  new KeySchemaElement().withKeyType(KeyType.RANGE)
-                                                                                                                       .withAttributeName("group"))
+                                                                                                                       .withAttributeName("pid"))
                                                                                   .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
                                                                                           5L).withWriteCapacityUnits(3L))
                                                                                   .withProjection(new Projection().withProjectionType(ProjectionType.ALL));

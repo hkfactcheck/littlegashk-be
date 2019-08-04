@@ -1,8 +1,10 @@
 package io.littlegashk.webapp;
 
 import com.google.common.base.Strings;
+import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
+import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/topics")
@@ -25,25 +29,31 @@ public class TopicController {
     @Autowired
     TopicRepository repository;
 
+    @Autowired
+    TagRepository tagRepository;
+
     @ApiOperation("get topic")
     @GetMapping("/{tid}")
-    public ResponseEntity<Topic> getTopic(@PathVariable String tid){
+    public ResponseEntity<Topic> getTopic(@PathVariable String tid) {
+
         return ResponseEntity.ok(repository.findById(TopicId.of(tid)).get());
     }
 
+
+
     @ApiOperation("get all topics with specified group")
     @GetMapping
-    public ResponseEntity<List<Topic>> getTopicsByGroup(@RequestParam String group){
+    public ResponseEntity<List<Topic>> getTopicsByGroup(@RequestParam(required = false) String group) {
 
-        List<Topic> allTopic = repository.getAllInGroup(StringUtils.isEmpty(group)?"DEFAULT":group);
+        List<Topic> allTopic = repository.getAllInGroup(StringUtils.isEmpty(group) ? "DEFAULT" : group);
         return ResponseEntity.ok(allTopic);
     }
 
     @ApiOperation("get topic progresses")
     @GetMapping("/{tid}/progress")
-    public ResponseEntity<List<Topic>> getAllTopicProgress(@PathVariable String tid){
+    public ResponseEntity<List<Topic>> getAllTopicProgress(@PathVariable String tid) {
 
-        List<Topic> progressItems =  new LinkedList<>();
+        List<Topic> progressItems = new LinkedList<>();
         repository.getProgressByTopicId(tid).iterator().forEachRemaining(progressItems::add);
         progressItems.sort(Comparator.comparing(Topic::getEventDateTime));
 
@@ -52,9 +62,9 @@ public class TopicController {
 
     @ApiOperation("get public responses on a topic")
     @GetMapping("/{tid}/response")
-    public ResponseEntity<List<Topic>> getAllTopicResponse(@PathVariable String tid){
+    public ResponseEntity<List<Topic>> getAllTopicResponse(@PathVariable String tid) {
 
-        List<Topic> responseItems =  new LinkedList<>();
+        List<Topic> responseItems = new LinkedList<>();
         repository.getPublicResponseByTopicId(tid).iterator().forEachRemaining(responseItems::add);
         responseItems.sort(Comparator.comparing(Topic::getEventDateTime));
 
