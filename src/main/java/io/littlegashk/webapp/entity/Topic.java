@@ -8,7 +8,9 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.Id;
+import springfox.documentation.annotations.ApiIgnore;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -50,6 +52,7 @@ public class Topic {
 
 
     //Any progress topics should NOT have group
+    @JsonIgnore
     @DynamoDBIndexHashKey(globalSecondaryIndexName = "group-index")
     private String group;
 
