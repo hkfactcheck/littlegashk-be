@@ -78,7 +78,6 @@ public class AdminController {
         db.setTags(topic.getTags());
         db.setReferences(topic.getReferences());
         db.setRelatedTopics(topic.getRelatedTopics());
-        db.setType(EntryType.TOPIC);
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
         return ResponseEntity.ok(null);
