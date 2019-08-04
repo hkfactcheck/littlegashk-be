@@ -1,0 +1,16 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk11
+  build:
+    commands:
+      - mvn clean package
+
+artifacts:
+  files:
+    - 'target/littlegashk.jar'
+    - 'appspec.yml'
+    - 'start_service.sh'
+    - 'stop_service.sh'
