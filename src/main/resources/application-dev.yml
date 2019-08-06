@@ -5,17 +5,7 @@ server:
 
 logging:
   level:
-    root: debug
+    root: info
 
 dynamodb:
   endpoint: http://localhost:8000
-
-cloud:
-  aws:
-    region:
-      static: us-east-2
-    stack:
-      auto: false
-    credentials:
-      access-key: a_dummy_value_but_it_is_necessary
-      secret-key: a_dummy_value_but_it_is_necessary
