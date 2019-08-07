@@ -12,6 +12,10 @@ This is a spring boot project intended to be run within AWS architecture.
 
 The application should start and you can checkout the swagger doc by navigating to http://localhost/swagger-ui.html#
 
+### Setup local workspace (the lazy way)
+1. `docker-compose build`
+2. `docker-compose up`
+
 ### About your local DynamoDB
 
 When application starts, it will install schema as written in `DynamoDbSchemaInitializer.java`

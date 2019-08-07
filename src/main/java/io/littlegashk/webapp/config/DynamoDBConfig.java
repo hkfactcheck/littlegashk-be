@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration
-@EnableDynamoDBRepositories(basePackages = "io.littlegashk.webapp.repository" )
+@EnableDynamoDBRepositories(basePackages = "io.littlegashk.webapp.repository")
 public class DynamoDBConfig {
 
     @Value("${dynamodb.endpoint:#{null}}")
@@ -27,19 +27,24 @@ public class DynamoDBConfig {
     @Bean
     @Primary
     public DynamoDBMapperConfig dynamoDBMapperConfig() {
+
         return DynamoDBMapperConfig.DEFAULT;
     }
 
     @Bean
     @Primary
     public DynamoDBMapper dynamoDBMapper(AmazonDynamoDB amazonDynamoDB, DynamoDBMapperConfig config) {
+
         return new DynamoDBMapper(amazonDynamoDB, config);
     }
 
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
+
         AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
-        if(StringUtils.isNotBlank(endpoint)){
+        if (StringUtils.isNotBlank(endpoint)) {
+            //Local dynamo db
+            builder.withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("dummy", "dummy")));
             builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, ""));
         }
         return builder.enableEndpointDiscovery().build();

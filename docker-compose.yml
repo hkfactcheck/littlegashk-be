@@ -1,0 +1,14 @@
+version: '2'
+services:
+  dynamo:
+    image: amazon/dynamodb-local
+    ports:
+      - "8000:8000"
+  app:
+    build:
+      context: .
+    network_mode: "host"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "80:80"
