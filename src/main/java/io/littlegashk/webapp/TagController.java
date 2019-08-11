@@ -34,7 +34,7 @@ public class TagController {
     @GetMapping
     public ResponseEntity<Set<String>> getTags() {
         Set<String> tags = new HashSet<>();
-        tagRepository.findAllTags().iterator().forEachRemaining(t->tags.add(t.getTag()));
+        tagRepository.findAllTags().iterator().forEachRemaining(t->tags.add(t.getTagId().replaceFirst("TAG\\|","" )));
         return ResponseEntity.ok(tags);
     }
 
@@ -44,7 +44,7 @@ public class TagController {
         List<Topic> responseItems = new LinkedList<>();
         Set<TopicId> allTopic = tagRepository.findAllWithTag(tag)
                                              .stream()
-                                             .map(tagTopic -> TopicId.of(tagTopic.getTopicId(), tagTopic.getRecordId()))
+                                             .map(tagTopic -> TopicId.of(tagTopic.getEventDate(), tagTopic.getRecordId()))
                                              .collect(Collectors.toSet());
         repository.findAllById(allTopic).iterator().forEachRemaining(responseItems::add);
         return ResponseEntity.ok(responseItems);

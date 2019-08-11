@@ -12,15 +12,15 @@ import java.util.List;
 @EnableScan
 public interface TagRepository extends CrudRepository<TagTopic, TagTopicId> {
 
-    List<TagTopic> findAllByGroupAndTag(String group, String tag);
+    List<TagTopic> findAllByTagAndTagIdStartsWith(String tag, String tagIdPrefix);
 
-    List<TagTopic> findAllByGroup(String group);
+    List<TagTopic> findAllByTag(String group);
 
     default List<TagTopic> findAllWithTag(String tag){
-        return findAllByGroupAndTag("TAG", tag);
+        return findAllByTagAndTagIdStartsWith("TAG", "TAG|"+ tag);
     }
 
     default List<TagTopic> findAllTags(){
-        return findAllByGroup("TAG");
+        return findAllByTag("TAG");
     }
 }

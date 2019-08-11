@@ -24,9 +24,9 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
         ListTablesResult listTablesResult = db.listTables();
         if (!listTablesResult.getTableNames().contains(TABLE_LITTLEGAS)) {
             log.info("Table not found, creating....");
-            GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex().withIndexName("group-index")
+            GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex().withIndexName("tag-index")
                                                                                   .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
-                                                                                                                       .withAttributeName("group"),
+                                                                                                                       .withAttributeName("tag"),
                                                                                                  new KeySchemaElement().withKeyType(KeyType.RANGE)
                                                                                                                        .withAttributeName("pid"))
                                                                                   .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
@@ -42,7 +42,7 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                                                                             .withGlobalSecondaryIndexes(globalSecondaryIndex)
                     .withAttributeDefinitions(new AttributeDefinition().withAttributeName("pid").withAttributeType(ScalarAttributeType.S),
                                               new AttributeDefinition().withAttributeName("sid").withAttributeType(ScalarAttributeType.S),
-                                              new AttributeDefinition().withAttributeName("group").withAttributeType(ScalarAttributeType.S));
+                                              new AttributeDefinition().withAttributeName("tag").withAttributeType(ScalarAttributeType.S));
             db.createTable(createTableRequest);
             log.info("Table creation done");
         }

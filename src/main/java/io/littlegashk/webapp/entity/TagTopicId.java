@@ -18,8 +18,8 @@ public class TagTopicId implements Serializable {
     @DynamoDBRangeKey
     private String topicRecordId;
 
-    public static TagTopicId of(String tag, String topicId, String recordId){
+    public static TagTopicId of(String tag, String eventDate, String recordId){
 
-        return new TagTopicId(tag, topicId+ "|" + recordId);
+        return new TagTopicId("TAG|" + tag, eventDate+ "|" + recordId);
     }
 }

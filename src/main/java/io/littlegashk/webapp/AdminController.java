@@ -11,10 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -33,11 +30,8 @@ public class AdminController {
     @PostMapping("/topics")
     public ResponseEntity<?> addTopic(@RequestBody Topic topic) {
 
-        if (topic.getGroup() == null) {
-            topic.setGroup("DEFAULT");
-        }
         topic.setType(EntryType.TOPIC);
-        topic.setRecordId("TOP");
+        topic.setRecordId("topic-" + UUID.randomUUID().toString());
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
         return ResponseEntity.ok(null);
@@ -73,7 +67,6 @@ public class AdminController {
         Topic db = topicRepository.findById(TopicId.of(topic.getTopicId())).get();
         deleteTags(db);
         db.setTitle(topic.getTitle());
-        db.setEventDateTime(topic.getEventDateTime());
         db.setSummary(topic.getSummary());
         db.setTags(topic.getTags());
         db.setReferences(topic.getReferences());
@@ -84,26 +77,41 @@ public class AdminController {
     }
 
     @ApiOperation("insert a progress")
-    @PostMapping("/progress")
-    public ResponseEntity<?> addProgress(HttpServletRequest req, @RequestBody Topic topic) {
+    @PostMapping("/topics/{topicId}/progress")
+    public ResponseEntity<?> addProgress(HttpServletRequest req, @PathVariable String topicId, @RequestBody Topic topic) {
 
-        topic.setGroup(null); //important
         topic.setRecordId("progress-" + UUID.randomUUID().toString());
         topic.setType(EntryType.PROGRESS);
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
+
+        associatedParent(topicId, savedTopic);
         return ResponseEntity.ok(null);
     }
 
-    @ApiOperation("insert a public response")
-    @PostMapping("/response")
-    public ResponseEntity<?> addResponse(HttpServletRequest req, @RequestBody Topic topic) {
+    private void associatedParent(@PathVariable String topicId, Topic savedTopic) {
 
-        topic.setGroup(null); //important
+        Optional<Topic> parent = topicRepository.findById(TopicId.of(topicId));
+        if(parent.isPresent()){
+            Topic parentTopic = parent.get();
+            if(parentTopic.getChildren()==null){
+                parentTopic.setChildren(new HashSet<>());
+            }
+            parentTopic.getChildren().add(savedTopic.getTopicId());
+            topicRepository.save(parentTopic);
+        }
+    }
+
+    @ApiOperation("insert a public response")
+    @PostMapping("/topics/{topicId}/response")
+    public ResponseEntity<?> addResponse(HttpServletRequest req, @PathVariable String topicId, @RequestBody Topic topic) {
+
         topic.setRecordId("response-" + UUID.randomUUID().toString());
         topic.setType(EntryType.PUBLIC_RESPONSE);
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
+
+        associatedParent(topicId, savedTopic);
         return ResponseEntity.ok(null);
     }
 
