@@ -7,6 +7,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +36,17 @@ public class AdminController {
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
         return ResponseEntity.ok(null);
+    }
+
+    @ApiOperation("delete a topic")
+    @DeleteMapping("/{topicId}")
+    public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
+        var tid = TopicId.of(topicId);
+        if (!topicRepository.existsById(tid)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        topicRepository.deleteById(tid);
+        return new ResponseEntity<>(topicId, HttpStatus.OK);
     }
 
     private void deleteTags(Topic existing) {
