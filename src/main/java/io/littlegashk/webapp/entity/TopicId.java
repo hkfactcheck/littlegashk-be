@@ -1,7 +1,6 @@
 package io.littlegashk.webapp.entity;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,25 +9,32 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class TopicId implements Serializable {
 
     @DynamoDBHashKey
-    private String eventDate;
+    private String topicId;
     @DynamoDBRangeKey
-    private String recordId;
+    private String sortKey;
 
-    public static TopicId of(String eventDate, String recordId){
-        return new TopicId(eventDate, recordId);
+    public static TopicId fromEventDate (String eventDate) {
+        return new TopicId(eventDate + "|" + System.currentTimeMillis(), EntryType.TOPIC.name());
     }
 
-    public static TopicId of(String delimited){
-        String[] split = delimited.split("\\|");
-        return TopicId.of(split[0], split[1]);
+    public static TopicId fromEventDate (String eventDate, String sortKey) {
+        return new TopicId(eventDate + "|" + System.currentTimeMillis(), sortKey);
     }
-    @Override
-    public String toString(){
-        return eventDate+"|"+recordId;
+
+    public static TopicId of(String topicId, String sortKey){
+        return new TopicId(topicId, sortKey);
+    }
+
+    public static TopicId of(String topicId, EntryType eventType){
+        return new TopicId(topicId, eventType.name());
+    }
+
+    public static TopicId of(String topicId){
+        return new TopicId(topicId, EntryType.TOPIC.name());
     }
 }

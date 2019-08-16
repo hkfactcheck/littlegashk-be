@@ -5,7 +5,7 @@ server:
 
 logging:
   level:
-    root: info
+    root: debug
 
 dynamodb:
   endpoint: http://localhost:8000

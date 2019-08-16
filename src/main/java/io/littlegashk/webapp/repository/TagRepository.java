@@ -2,25 +2,40 @@ package io.littlegashk.webapp.repository;
 
 import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.TagTopicId;
-import io.littlegashk.webapp.entity.Topic;
-import io.littlegashk.webapp.entity.TopicId;
+import org.socialsignin.spring.data.dynamodb.repository.DynamoDBPagingAndSortingRepository;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 @EnableScan
-public interface TagRepository extends CrudRepository<TagTopic, TagTopicId> {
+public interface TagRepository extends DynamoDBPagingAndSortingRepository<TagTopic, TagTopicId> {
 
-    List<TagTopic> findAllByTagAndTagIdStartsWith(String tag, String tagIdPrefix);
+    Page<TagTopic> findAllByTag(String tag, Pageable pageable);
 
-    List<TagTopic> findAllByTag(String group);
-
-    default List<TagTopic> findAllWithTag(String tag){
-        return findAllByTagAndTagIdStartsWith("TAG", "TAG|"+ tag);
+    default Set<String> findAllTags(){
+        boolean last = false;
+        Set<String> tags  = new HashSet<>();
+        while(!last) {
+            Pageable pr = PageRequest.of(0, 1000);
+            Page<TagTopic> someTags = findAllByTag("TAG", pr);
+            last = someTags.isLast();
+            tags.addAll(someTags.get().map(TagTopic::getTagString).collect(Collectors.toSet()));
+        }
+        return tags;
     }
 
-    default List<TagTopic> findAllTags(){
-        return findAllByTag("TAG");
+    Page<TagTopic> findTagTopicByTagKeyAndTopicIdBefore(String tagKey, String lastTopicId, Pageable pageable);
+
+    default Page<TagTopic> findAllWithTag(String tag, String lastTopicId, int page) {
+        PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "topicId");
+        return findTagTopicByTagKeyAndTopicIdBefore("TAG|" + tag, lastTopicId, pr);
     }
+
 }

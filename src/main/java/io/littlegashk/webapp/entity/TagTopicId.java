@@ -14,12 +14,12 @@ import java.io.Serializable;
 public class TagTopicId implements Serializable {
 
     @DynamoDBHashKey
-    private String tag;
+    private String topicId;
     @DynamoDBRangeKey
-    private String topicRecordId;
+    private String tagKey;
 
-    public static TagTopicId of(String tag, String eventDate, String recordId){
+    public static TagTopicId of(String topicId, String tag) {
 
-        return new TagTopicId("TAG|" + tag, eventDate+ "|" + recordId);
+        return new TagTopicId(topicId, "TAG|" + tag);
     }
 }

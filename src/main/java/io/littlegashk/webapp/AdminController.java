@@ -1,6 +1,12 @@
 package io.littlegashk.webapp;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.google.common.collect.ImmutableMap;
 import io.littlegashk.webapp.entity.*;
+import io.littlegashk.webapp.repository.ChildRelationRepository;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.swagger.annotations.Api;
@@ -12,8 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static io.littlegashk.webapp.DynamoDbSchemaInitializer.TABLE_LITTLEGAS;
 
 @RestController
 @RequestMapping("/admin")
@@ -26,16 +35,36 @@ public class AdminController {
 
     @Autowired
     TagRepository tagRepository;
+    @Autowired
+    ChildRelationRepository childRelationRepository;
+
+    @Autowired
+    AmazonDynamoDB db;
 
     @ApiOperation("insert topic")
     @PostMapping("/topics")
-    public ResponseEntity<?> addTopic(@RequestBody Topic topic) {
+    public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
 
+        TopicId id = TopicId.fromEventDate(topic.getEventDate());
+        topic.setTopicId(id.getTopicId());
+        topic.setSortKey(id.getSortKey());
         topic.setType(EntryType.TOPIC);
-        topic.setRecordId("topic-" + UUID.randomUUID().toString());
+        topic.setLastUpdated(System.currentTimeMillis());
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
+    }
+
+    @ApiOperation("delete a topic")
+    @DeleteMapping("/{topicId}")
+    public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
+
+        QueryResult queryResult = db.query(new QueryRequest().withTableName(TABLE_LITTLEGAS)
+                                                             .withKeyConditionExpression("pid = :pid")
+                                                             .withExpressionAttributeValues(ImmutableMap.of(":pid",
+                                                                                                            new AttributeValue().withS(topicId))));
+        queryResult.getItems().stream().map(m -> TopicId.of(m.get("pid").getS(), m.get("sid").getS())).forEach(topicRepository::deleteById);
+        return new ResponseEntity<>(topicId, HttpStatus.OK);
     }
 
     @ApiOperation("delete a topic")
@@ -51,30 +80,34 @@ public class AdminController {
 
     private void deleteTags(Topic existing) {
 
-        Set<TagTopic> currentSet = existing.getTags()
-                                             .stream()
-                                             .map(s -> TagTopicId.of(s, existing.getTopicId(), existing.getRecordId()))
-                                             .map(TagTopic::new)
-                                             .collect(Collectors.toSet());
+        if (existing.getTags() != null && existing.getTags().size() > 0) {
+            Set<TagTopic> currentSet = existing.getTags()
+                                               .stream()
+                                               .map(s -> TagTopicId.of(existing.getTopicId(), s))
+                                               .map(TagTopic::new)
+                                               .collect(Collectors.toSet());
 
-        tagRepository.deleteAll(currentSet);
+            tagRepository.deleteAll(currentSet);
+        }
     }
 
 
     private void saveTags(Topic updated) {
 
-        Set<TagTopic> newTagList = updated.getTags()
-                                           .stream()
-                                           .map(s -> TagTopicId.of(s, updated.getTopicId(), updated.getRecordId()))
-                                           .map(TagTopic::new)
-                                           .collect(Collectors.toSet());
+        if (updated.getTags() != null && updated.getTags().size() > 0) {
+            Set<TagTopic> newTagList = updated.getTags()
+                                              .stream()
+                                              .map(s -> TagTopicId.of(updated.getTopicId(), s))
+                                              .map(TagTopic::new)
+                                              .collect(Collectors.toSet());
 
-        tagRepository.saveAll(newTagList);
+            tagRepository.saveAll(newTagList);
+        }
     }
 
     @ApiOperation("edit topic")
     @PutMapping("/topics")
-    public ResponseEntity<?> editTopic(@RequestBody Topic topic) {
+    public ResponseEntity<Topic> editTopic(@RequestBody Topic topic) {
 
         Topic db = topicRepository.findById(TopicId.of(topic.getTopicId())).get();
         deleteTags(db);
@@ -85,122 +118,52 @@ public class AdminController {
         db.setRelatedTopics(topic.getRelatedTopics());
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
     }
 
     @ApiOperation("insert a progress")
-    @PostMapping("/topics/{topicId}/progress")
-    public ResponseEntity<?> addProgress(HttpServletRequest req, @PathVariable String topicId, @RequestBody Topic topic) {
+    @PostMapping("/topics/{parentTopicId}/progress")
+    public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
 
-        topic.setRecordId("progress-" + UUID.randomUUID().toString());
+        TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.PROGRESS.name());
+        topic.setTopicId(id.getTopicId());
+        topic.setSortKey(id.getSortKey());
         topic.setType(EntryType.PROGRESS);
+        topic.setLastUpdated(System.currentTimeMillis());
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
 
-        associatedParent(topicId, savedTopic);
-        return ResponseEntity.ok(null);
+        associatedParent(parentTopicId, savedTopic);
+        return ResponseEntity.ok(savedTopic);
     }
 
     private void associatedParent(@PathVariable String topicId, Topic savedTopic) {
 
         Optional<Topic> parent = topicRepository.findById(TopicId.of(topicId));
-        if(parent.isPresent()){
+        if (parent.isPresent()) {
             Topic parentTopic = parent.get();
-            if(parentTopic.getChildren()==null){
-                parentTopic.setChildren(new HashSet<>());
-            }
-            parentTopic.getChildren().add(savedTopic.getTopicId());
+            parentTopic.setLastUpdated(System.currentTimeMillis());
             topicRepository.save(parentTopic);
+            ChildRelation childRelation = new ChildRelation();
+            childRelation.setTopicId(parentTopic.getTopicId());
+            childRelation.setSortKey(savedTopic.getType().name() + "|" + savedTopic.getTopicId());
+            childRelationRepository.save(childRelation);
         }
     }
 
     @ApiOperation("insert a public response")
-    @PostMapping("/topics/{topicId}/response")
-    public ResponseEntity<?> addResponse(HttpServletRequest req, @PathVariable String topicId, @RequestBody Topic topic) {
+    @PostMapping("/topics/{parentTopicId}/response")
+    public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
 
-        topic.setRecordId("response-" + UUID.randomUUID().toString());
-        topic.setType(EntryType.PUBLIC_RESPONSE);
+        TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.RESPONSE.name());
+        topic.setTopicId(id.getTopicId());
+        topic.setSortKey(id.getSortKey());
+        topic.setType(EntryType.RESPONSE);
+        topic.setLastUpdated(System.currentTimeMillis());
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
 
-        associatedParent(topicId, savedTopic);
-        return ResponseEntity.ok(null);
+        associatedParent(parentTopicId, savedTopic);
+        return ResponseEntity.ok(savedTopic);
     }
-
-    //
-    //
-    //    @ApiOperation("vote up event")
-    //    @PutMapping("/topics/{pid}/events/{sid}/up")
-    //    public ResponseEntity<?> voteUpEvent(HttpServletRequest req, @PathVariable String pid, @PathVariable String sid){
-    //        String username = JwtUtils.getUsername(req);
-    //        Event event = eventRepository.findEventByTopicIdAndEventId(pid, sid).get(0);
-    //        if (StringUtils.equals(event.getCreatedBy(), username)){
-    //            return ResponseEntity.badRequest().build();
-    //        }
-    //        if(!event.getUpRaters().contains(username)){
-    //            event.getUpRaters().add(username);
-    //            event.getDownRaters().remove(username);
-    //            event.setRating(event.getUpRaters().size()-event.getDownRaters().size());
-    //            eventRepository.save(event);
-    //        }else{
-    //            return ResponseEntity.badRequest().build();
-    //        }
-    //
-    //
-    //        return ResponseEntity.ok(null);
-    //    }
-    //
-    //    @ApiOperation("vote down event")
-    //    @PutMapping("/topics/{pid}/events/{sid}/down")
-    //    public ResponseEntity<?> voteDownEvent(HttpServletRequest req, @PathVariable String pid, @PathVariable String sid){
-    //        String username = JwtUtils.getUsername(req);
-    //        Event event = eventRepository.findEventByTopicIdAndEventId(pid, sid).get(0);
-    //
-    //        if (StringUtils.equals(event.getCreatedBy(), username)){
-    //            return ResponseEntity.badRequest().build();
-    //        }
-    //        if(!event.getDownRaters().contains(username)){
-    //            event.getDownRaters().add(username);
-    //            event.getUpRaters().remove(username);
-    //            event.setRating(event.getUpRaters().size()-event.getDownRaters().size());
-    //            eventRepository.save(event);
-    //        }else{
-    //            return ResponseEntity.badRequest().build();
-    //        }
-    //        return ResponseEntity.ok(null);
-    //    }
-    //
-    //    @ApiOperation("delete event")
-    //    @PutMapping("/topics/{pid}/events/{sid}/delete")
-    //    public ResponseEntity<?> deleteEvent(HttpServletRequest req, @PathVariable String pid, @PathVariable String sid){
-    //        String username = JwtUtils.getUsername(req);
-    //        Event event = eventRepository.findEventByTopicIdAndEventId(pid, sid).get(0);
-    //
-    //        if (StringUtils.equals(event.getCreatedBy(), username)){
-    //            eventRepository.delete(event);
-    //            return ResponseEntity.ok(null);
-    //        }else{
-    //            return ResponseEntity.badRequest().build();
-    //        }
-    //    }
-    //
-    //    @ApiOperation("hide topic")
-    //    @PutMapping("/topics/{pid}/hide")
-    //    public ResponseEntity<?> hideTopic(@PathVariable String pid){
-    //
-    //        Topic topic = topicRepository.findById(TopicId.of(pid)).get();
-    //        topic.setHidden(true);
-    //        topicRepository.save(topic);
-    //        return ResponseEntity.ok(null);
-    //    }
-    //
-    //    @ApiOperation("show topic")
-    //    @PutMapping("/topics/{pid}/show")
-    //    public ResponseEntity<?> showTopic(@PathVariable String pid){
-    //
-    //        Topic topic = topicRepository.findById(TopicId.of(pid)).get();
-    //        topic.setHidden(false);
-    //        topicRepository.save(topic);
-    //        return ResponseEntity.ok(null);
-    //    }
 }

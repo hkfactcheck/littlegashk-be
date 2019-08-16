@@ -27,33 +27,36 @@ public class Topic {
     private TopicId id;
 
     @DynamoDBHashKey(attributeName = "pid")
-    @ApiModelProperty(position = 1, example = "2019-08-01", notes = "Event date in format YYYY-MM-DD, also act as partition key")
-    public String getEventDate() {
+    @ApiModelProperty(position = 1, example = "2019-08-01|1565877016020",
+            notes = "Treat as unique record Id. Contains event date and record creation timestamp")
+    @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-pid-index")
+    public String getTopicId() {
 
-        return id == null ? null : id.getEventDate();
+        return id == null ? null : id.getTopicId();
     }
 
-    public void setEventDate(String eventDate) {
+    public void setTopicId(String topicId) {
 
         if (this.id == null) {
             this.id = new TopicId();
         }
-        this.id.setEventDate(eventDate);
+        this.id.setTopicId(topicId);
     }
 
     @DynamoDBRangeKey(attributeName = "sid")
     @JsonIgnore
-    public String getRecordId() {
+    @DynamoDBIndexHashKey(globalSecondaryIndexNames ={"sid-pid-index", "sid-last-updated-index"})
+    public String getSortKey() {
 
-        return id == null ? null : id.getRecordId();
+        return id == null ? null : id.getSortKey();
     }
 
-    public void setRecordId(String recordId) {
+    public void setSortKey(String sortKey) {
 
         if (this.id == null) {
             this.id = new TopicId();
         }
-        this.id.setRecordId(recordId);
+        this.id.setSortKey(sortKey);
     }
 
 
@@ -79,19 +82,19 @@ public class Topic {
 
     @DynamoDBTypeConvertedJson
     @ApiModelProperty(position = 8)
-    private List<String> references;
+    private List<Reference> references;
 
     @DynamoDBTypeConvertedJson
     @ApiModelProperty(position = 9)
     private Set<String> tags;
 
-    @DynamoDBTypeConvertedJson
-    @ApiModelProperty(position = 10, notes = "Topic id of child records")
-    private Set<String> children;
+    @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-last-updated-index")
+    @ApiModelProperty(position = 11, example="Last updated timestamp")
+    private long lastUpdated;
 
-    @DynamoDBIgnore
-    @ApiModelProperty(position = 0, notes = "Topic id")
-    public String getTopicId(){
-        return id.toString();
-    }
+
+    @ApiModelProperty(position = 12)
+    private String eventDate;
+
+
 }
