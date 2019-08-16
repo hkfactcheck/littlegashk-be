@@ -8,16 +8,16 @@ import org.springframework.data.annotation.Id;
 @DynamoDBTable(tableName = DynamoDbSchemaInitializer.TABLE_LITTLEGAS)
 @Data
 @NoArgsConstructor
-public class TagTopic {
+public class ChildRelation {
 
-    public TagTopic(TagTopicId id){
+    public ChildRelation(ChildRelationId id){
         this.id=id;
     }
 
     @Id
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private TagTopicId id;
+    private ChildRelationId id;
 
     @DynamoDBHashKey(attributeName = "pid")
     @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-pid-index")
@@ -27,26 +27,26 @@ public class TagTopic {
 
     public void setTopicId(String topicId){
         if(this.id == null){
-            this.id =new TagTopicId();
+            this.id =new ChildRelationId();
         }
         this.id.setTopicId(topicId);
     }
 
     @DynamoDBRangeKey(attributeName = "sid")
     @DynamoDBIndexHashKey(globalSecondaryIndexName ="sid-pid-index")
-    public String getTagKey(){
-        return id == null?null: id.getTagKey();
+    public String getChildRelation(){
+        return id == null?null: id.getChildRelation();
     }
 
-    public void setTagKey(String tagKey){
+    public void setChildRelation(String childRelation){
         if(this.id == null){
-            this.id =new TagTopicId();
+            this.id =new ChildRelationId();
         }
-        this.id.setTagKey(tagKey);
+        this.id.setChildRelation(childRelation);
     }
 
     @DynamoDBIgnore
-    public String getTag(){
-        return id.getTagKey().split("\\|", 2)[1];
+    public String getChildTopicId(){
+        return id.getChildRelation().split("\\|", 2)[1];
     }
 }

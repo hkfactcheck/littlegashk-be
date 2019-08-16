@@ -1,15 +1,13 @@
 package io.littlegashk.webapp.config;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverterFactory;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import org.socialsignin.spring.data.dynamodb.repository.config.EnableDynamoDBRepositories;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +26,10 @@ public class DynamoDBConfig {
     @Primary
     public DynamoDBMapperConfig dynamoDBMapperConfig() {
 
-        return DynamoDBMapperConfig.DEFAULT;
+        return new DynamoDBMapperConfig.Builder()
+                .withTableNameResolver(DynamoDBMapperConfig.DefaultTableNameResolver.INSTANCE)
+                .withTypeConverterFactory(DynamoDBTypeConverterFactory.standard())
+                .withPaginationLoadingStrategy(DynamoDBMapperConfig.PaginationLoadingStrategy.ITERATION_ONLY).build();
     }
 
     @Bean

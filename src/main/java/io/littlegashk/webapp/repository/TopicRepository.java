@@ -1,54 +1,35 @@
 package io.littlegashk.webapp.repository;
 
-import com.google.common.collect.Lists;
+import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
+import org.socialsignin.spring.data.dynamodb.repository.EnableScanCount;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @EnableScan
 public interface TopicRepository extends CrudRepository<Topic, TopicId> {
 
-    List<Topic> findAllByEventDateAndRecordIdStartsWith(String eventDate, String recordIdPrefix);
+    Page<Topic> findTopicsBySortKeyAndLastUpdatedIsBefore(String sortKey, long lastUpdated, Pageable pageable);
 
-    default List<Topic> getAllTopicByDate(String date) {
+    Page<Topic> findTopicsBySortKeyAndTopicIdStartsWith(String sortKey, String eventDate, Pageable pageable);
 
-        return findAllByEventDateAndRecordIdStartsWith(date, "topic-");
+    List<Topic> findAllByTopicIdIn(List<String> topicIds);
+
+    default Page<Topic> getAllTopicUpdatedBefore(long lastUpdated, int page) {
+        PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "lastUpdated");
+        return findTopicsBySortKeyAndLastUpdatedIsBefore(EntryType.TOPIC.name(), lastUpdated, pr);
     }
 
-    default List<Topic> getProgressByTopic(TopicId topicId) {
-
-        Optional<Topic> topic = findById(topicId);
-        if (topic.isEmpty()) {
-            return List.of();
-        }
-        Set<String> children = topic.get().getChildren();
-        List<Topic> progress = Lists.newArrayList(findAllById(children.stream()
-                                                                      .map(TopicId::of)
-                                                                      .filter(t->t.getRecordId().startsWith("progress-"))
-                                                                      .collect(Collectors.toList())));
-
-        return progress;
-    }
-
-    default List<Topic> getPublicResponseByTopic(TopicId topicId) {
-
-        Optional<Topic> topic = findById(topicId);
-        if (topic.isEmpty()) {
-            return List.of();
-        }
-        Set<String> children = topic.get().getChildren();
-        List<Topic> response = Lists.newArrayList(findAllById(children.stream()
-                                                                      .map(TopicId::of)
-                                                                      .filter(t->t.getRecordId().startsWith("response-"))
-                                                                      .collect(Collectors.toList())));
-
-        return response;
+    default Page<Topic> getAllTopicByEventDate(String eventDate, int page) {
+        PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "topicId");
+        return findTopicsBySortKeyAndTopicIdStartsWith(EntryType.TOPIC.name(), eventDate, pr);
     }
 
 }

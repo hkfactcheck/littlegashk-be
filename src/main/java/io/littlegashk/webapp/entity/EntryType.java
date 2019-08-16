@@ -4,5 +4,5 @@ public enum EntryType {
 
     TOPIC,
     PROGRESS,
-    PUBLIC_RESPONSE
+    RESPONSE
 }

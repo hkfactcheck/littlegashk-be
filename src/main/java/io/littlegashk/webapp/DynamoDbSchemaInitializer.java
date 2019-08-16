@@ -24,14 +24,23 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
         ListTablesResult listTablesResult = db.listTables();
         if (!listTablesResult.getTableNames().contains(TABLE_LITTLEGAS)) {
             log.info("Table not found, creating....");
-            GlobalSecondaryIndex globalSecondaryIndex = new GlobalSecondaryIndex().withIndexName("tag-index")
-                                                                                  .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
-                                                                                                                       .withAttributeName("tag"),
-                                                                                                 new KeySchemaElement().withKeyType(KeyType.RANGE)
-                                                                                                                       .withAttributeName("pid"))
-                                                                                  .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
-                                                                                          5L).withWriteCapacityUnits(3L))
-                                                                                  .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+            GlobalSecondaryIndex sidPidIndex = new GlobalSecondaryIndex().withIndexName("sid-pid-index")
+                                                                         .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
+                                                                                                              .withAttributeName("sid"),
+                                                                                        new KeySchemaElement().withKeyType(KeyType.RANGE)
+                                                                                                              .withAttributeName("pid"))
+                                                                         .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
+                                                                                 5L).withWriteCapacityUnits(3L))
+                                                                         .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+            GlobalSecondaryIndex sidLastUpdatedIndex = new GlobalSecondaryIndex().withIndexName("sid-last-updated-index")
+                                                                                 .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
+                                                                                                                      .withAttributeName("sid"),
+                                                                                                new KeySchemaElement().withKeyType(KeyType.RANGE)
+                                                                                                                      .withAttributeName("lastUpdated"))
+                                                                                 .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
+                                                                                         5L).withWriteCapacityUnits(3L))
+                                                                                 .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+
             CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(TABLE_LITTLEGAS)
                                                                             .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
                                                                                                                  .withAttributeName("pid"),
@@ -39,10 +48,17 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                                                                                                                  .withAttributeName("sid"))
                                                                             .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
                                                                                     15L).withWriteCapacityUnits(10L))
-                                                                            .withGlobalSecondaryIndexes(globalSecondaryIndex)
-                    .withAttributeDefinitions(new AttributeDefinition().withAttributeName("pid").withAttributeType(ScalarAttributeType.S),
-                                              new AttributeDefinition().withAttributeName("sid").withAttributeType(ScalarAttributeType.S),
-                                              new AttributeDefinition().withAttributeName("tag").withAttributeType(ScalarAttributeType.S));
+                                                                            .withGlobalSecondaryIndexes(sidPidIndex, sidLastUpdatedIndex)
+                                                                            .withAttributeDefinitions(new AttributeDefinition().withAttributeName(
+                                                                                    "pid").withAttributeType(ScalarAttributeType.S),
+                                                                                                      new AttributeDefinition().withAttributeName(
+                                                                                                              "sid")
+                                                                                                                               .withAttributeType(
+                                                                                                                                       ScalarAttributeType.S),
+                                                                                                      new AttributeDefinition().withAttributeName(
+                                                                                                              "lastUpdated")
+                                                                                                                               .withAttributeType(
+                                                                                                                                       ScalarAttributeType.N));
             db.createTable(createTableRequest);
             log.info("Table creation done");
         }
