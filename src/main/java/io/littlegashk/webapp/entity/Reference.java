@@ -12,4 +12,6 @@ public class Reference {
     private String date;
 
     private String comment;
+
+    private String title;
 }
