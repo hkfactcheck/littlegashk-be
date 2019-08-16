@@ -26,6 +26,10 @@ public class TopicId implements Serializable {
         return new TopicId(eventDate + "|" + System.currentTimeMillis(), sortKey);
     }
 
+    public static TopicId of(String topicId, String sortKey){
+        return new TopicId(topicId, sortKey);
+    }
+
     public static TopicId of(String topicId, EntryType eventType){
         return new TopicId(topicId, eventType.name());
     }

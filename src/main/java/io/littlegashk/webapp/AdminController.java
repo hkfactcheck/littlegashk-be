@@ -1,5 +1,10 @@
 package io.littlegashk.webapp;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.google.common.collect.ImmutableMap;
 import io.littlegashk.webapp.entity.*;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
 import io.littlegashk.webapp.repository.TagRepository;
@@ -17,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.littlegashk.webapp.DynamoDbSchemaInitializer.TABLE_LITTLEGAS;
+
 @RestController
 @RequestMapping("/admin")
 @Api(value = "Admin")
@@ -30,6 +37,9 @@ public class AdminController {
     TagRepository tagRepository;
     @Autowired
     ChildRelationRepository childRelationRepository;
+
+    @Autowired
+    AmazonDynamoDB db;
 
     @ApiOperation("insert topic")
     @PostMapping("/topics")
@@ -48,11 +58,12 @@ public class AdminController {
     @ApiOperation("delete a topic")
     @DeleteMapping("/{topicId}")
     public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
-        var tid = TopicId.of(topicId);
-        if (!topicRepository.existsById(tid)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        topicRepository.deleteById(tid);
+
+        QueryResult queryResult = db.query(new QueryRequest().withTableName(TABLE_LITTLEGAS)
+                                                             .withKeyConditionExpression("pid = :pid")
+                                                             .withExpressionAttributeValues(ImmutableMap.of(":pid",
+                                                                                                            new AttributeValue().withS(topicId))));
+        queryResult.getItems().stream().map(m -> TopicId.of(m.get("pid").getS(), m.get("sid").getS())).forEach(topicRepository::deleteById);
         return new ResponseEntity<>(topicId, HttpStatus.OK);
     }
 
@@ -124,7 +135,7 @@ public class AdminController {
             topicRepository.save(parentTopic);
             ChildRelation childRelation = new ChildRelation();
             childRelation.setTopicId(parentTopic.getTopicId());
-            childRelation.setSortKey(savedTopic.getType().name() + "|" + savedTopic.getTopicId());
+            childRelation.setSortKey("C|" + savedTopic.getType().name() + "|" + savedTopic.getTopicId());
             childRelationRepository.save(childRelation);
         }
     }
