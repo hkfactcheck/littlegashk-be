@@ -20,8 +20,6 @@ public interface TopicRepository extends CrudRepository<Topic, TopicId> {
 
     Page<Topic> findTopicsBySortKeyAndTopicIdStartsWith(String sortKey, String eventDate, Pageable pageable);
 
-    List<Topic> findAllByTopicIdIn(List<String> topicIds);
-
     default Page<Topic> getAllTopicUpdatedBefore(long lastUpdated, int page) {
         PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "lastUpdated");
         return findTopicsBySortKeyAndLastUpdatedIsBefore(EntryType.TOPIC.name(), lastUpdated, pr);

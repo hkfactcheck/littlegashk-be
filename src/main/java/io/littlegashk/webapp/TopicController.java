@@ -1,6 +1,8 @@
 package io.littlegashk.webapp;
 
+import com.google.common.collect.ImmutableList;
 import io.littlegashk.webapp.entity.ChildRelation;
+import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
@@ -13,9 +15,11 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,11 +70,12 @@ public class TopicController {
                                                            @ApiParam(example= "0") @RequestParam(required = false) int page) {
 
         Page<ChildRelation> relations = childRelationRepository.getProgress(topicId, lastChildId, page);
-        List<String> childIds = relations.stream()
+        List<TopicId> childIds = relations.stream()
                                          .map(ChildRelation::getChildTopicId)
+                                         .map(s->TopicId.of(s, EntryType.PROGRESS))
                                          .collect(Collectors.toList());
-        List<Topic> topics = repository.findAllByTopicIdIn(childIds);
-        return ResponseEntity.ok(new PageImpl<>(topics, relations.getPageable(), relations.getTotalElements()));
+        Iterable<Topic> topics = repository.findAllById(childIds);
+        return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), relations.getPageable(), relations.getTotalElements()));
     }
 
     @ApiOperation("get public responses on a topic")
@@ -79,11 +84,12 @@ public class TopicController {
                                                            @RequestParam(required = false, defaultValue = "9999") String lastChildId,
                                                            @ApiParam(example= "0") @RequestParam(required = false) int page) {
         Page<ChildRelation> relations = childRelationRepository.getResponse(topicId, lastChildId, page);
-        List<String> childIds = relations.stream()
-                                         .map(ChildRelation::getChildTopicId)
-                                         .collect(Collectors.toList());
-        List<Topic> topics = repository.findAllByTopicIdIn(childIds);
-        return ResponseEntity.ok(new PageImpl<>(topics, relations.getPageable(), relations.getTotalElements()));
+        List<TopicId> childIds = relations.stream()
+                                          .map(ChildRelation::getChildTopicId)
+                                          .map(s->TopicId.of(s, EntryType.RESPONSE))
+                                          .collect(Collectors.toList());
+        Iterable<Topic> topics = repository.findAllById(childIds);
+        return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), relations.getPageable(), relations.getTotalElements()));
     }
 
 }

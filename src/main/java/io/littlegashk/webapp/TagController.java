@@ -1,13 +1,17 @@
 package io.littlegashk.webapp;
 
+import com.google.common.collect.ImmutableList;
 import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.Topic;
+import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,11 +42,13 @@ public class TagController {
     @GetMapping("/{tag}/topics")
     public ResponseEntity<List<Topic>> getTopicsByTag(@PathVariable String tag,
                                                       @RequestParam(required = false) String lastTopicId) {
-        List<String> allTopic = tagRepository.findAllWithTag(tag, lastTopicId)
+        List<TopicId> allTopic = tagRepository.findAllWithTag(tag, lastTopicId)
                                              .stream()
                                              .map(TagTopic::getTopicId)
+                                             .map(TopicId::of)
                                              .collect(Collectors.toList());
-
-        return ResponseEntity.ok(repository.findAllByTopicIdIn(allTopic));
+        Iterable<Topic> topics = repository.findAllById(allTopic);
+        //TODO: pagination
+        return ResponseEntity.ok(ImmutableList.copyOf(topics));
     }
 }

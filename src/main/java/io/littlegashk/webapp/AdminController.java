@@ -124,7 +124,7 @@ public class AdminController {
             topicRepository.save(parentTopic);
             ChildRelation childRelation = new ChildRelation();
             childRelation.setTopicId(parentTopic.getTopicId());
-            childRelation.setChildRelation(savedTopic.getType().name() + "|" + savedTopic.getTopicId());
+            childRelation.setSortKey(savedTopic.getType().name() + "|" + savedTopic.getTopicId());
             childRelationRepository.save(childRelation);
         }
     }

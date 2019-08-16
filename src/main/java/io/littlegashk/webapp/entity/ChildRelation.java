@@ -20,7 +20,6 @@ public class ChildRelation {
     private ChildRelationId id;
 
     @DynamoDBHashKey(attributeName = "pid")
-    @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-pid-index")
     public String getTopicId(){
         return id == null?null: id.getTopicId();
     }
@@ -33,20 +32,19 @@ public class ChildRelation {
     }
 
     @DynamoDBRangeKey(attributeName = "sid")
-    @DynamoDBIndexHashKey(globalSecondaryIndexName ="sid-pid-index")
-    public String getChildRelation(){
-        return id == null?null: id.getChildRelation();
+    public String getSortKey(){
+        return id == null?null: id.getSortKey();
     }
 
-    public void setChildRelation(String childRelation){
+    public void setSortKey(String sortKey){
         if(this.id == null){
             this.id =new ChildRelationId();
         }
-        this.id.setChildRelation(childRelation);
+        this.id.setSortKey(sortKey);
     }
 
     @DynamoDBIgnore
     public String getChildTopicId(){
-        return id.getChildRelation().split("\\|", 2)[1];
+        return id.getSortKey().split("\\|", 2)[1];
     }
 }
