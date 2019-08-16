@@ -42,7 +42,7 @@ public class TopicController {
     @ApiOperation("get all topics, sorted by lastUpdated date desc")
     @GetMapping
     public ResponseEntity<Page<Topic>> getTopics(@ApiParam(example = "1565883488250") @RequestParam(required = false) Long lastUpdated,
-                                                 @ApiParam(example= "0") @RequestParam(required = false) int page) {
+                                                 @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<Topic> allTopic = repository.getAllTopicUpdatedBefore(lastUpdated == null ? Long.MAX_VALUE : lastUpdated, page);
         return ResponseEntity.ok(allTopic);
@@ -51,7 +51,7 @@ public class TopicController {
     @ApiOperation("get all topics with specified date, sorted by topicId desc")
     @GetMapping("/date/{date}")
     public ResponseEntity<Page<Topic>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date,
-                                                       @ApiParam(example= "0") @RequestParam(required = false) int page) {
+                                                       @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<Topic> allTopic = repository.getAllTopicByEventDate(date, page);
         return ResponseEntity.ok(allTopic);
@@ -67,7 +67,7 @@ public class TopicController {
     @GetMapping("/{topicId}/progress")
     public ResponseEntity<Page<Topic>> getAllTopicProgress(@ApiParam(example = "2019-08-01|1565877016020") @PathVariable String topicId,
                                                            @RequestParam(required = false, defaultValue = "9999") String lastChildId,
-                                                           @ApiParam(example= "0") @RequestParam(required = false) int page) {
+                                                           @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<ChildRelation> relations = childRelationRepository.getProgress(topicId, lastChildId, page);
         List<TopicId> childIds = relations.stream()
@@ -82,7 +82,7 @@ public class TopicController {
     @GetMapping("/{topicId}/response")
     public ResponseEntity<Page<Topic>> getAllTopicResponse(@ApiParam(example = "2019-08-01|1565877016020") @PathVariable String topicId,
                                                            @RequestParam(required = false, defaultValue = "9999") String lastChildId,
-                                                           @ApiParam(example= "0") @RequestParam(required = false) int page) {
+                                                           @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
         Page<ChildRelation> relations = childRelationRepository.getResponse(topicId, lastChildId, page);
         List<TopicId> childIds = relations.stream()
                                           .map(ChildRelation::getChildTopicId)

@@ -46,7 +46,7 @@ public class TagController {
     @GetMapping("/{tag}/topics")
     public ResponseEntity<Page<Topic>> getTopicsByTag(@PathVariable String tag,
                                                       @RequestParam(required = false, defaultValue = "9999") String lastTopicId,
-                                                      @ApiParam(example = "0") @RequestParam(required = false) int page) {
+                                                      @ApiParam(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<TagTopic> allTagTopic = tagRepository.findAllWithTag(tag, lastTopicId, page);
         List<TopicId> allTopic = allTagTopic.stream()
