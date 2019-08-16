@@ -8,10 +8,11 @@ import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,25 +31,23 @@ public class TagController {
     @Autowired
     TagRepository tagRepository;
 
-//    @ApiOperation(value="get all tags in the DB", notes="TODO: expensive operation, find ways to optimize")
-//    @GetMapping
-//    public ResponseEntity<Set<String>> getTags() {
-//        Set<String> tags = new HashSet<>();
-//        tagRepository.findAllTags().iterator().forEachRemaining(t->tags.add(t.getTagId().replaceFirst("TAG\\|","" )));
-//        return ResponseEntity.ok(tags);
-//    }
+    //    @ApiOperation(value="get all tags in the DB", notes="TODO: expensive operation, find ways to optimize")
+    //    @GetMapping
+    //    public ResponseEntity<Set<String>> getTags() {
+    //        Set<String> tags = new HashSet<>();
+    //        tagRepository.findAllTags().iterator().forEachRemaining(t->tags.add(t.getTagId().replaceFirst("TAG\\|","" )));
+    //        return ResponseEntity.ok(tags);
+    //    }
 
     @ApiOperation("get all topics with specified tag")
     @GetMapping("/{tag}/topics")
-    public ResponseEntity<List<Topic>> getTopicsByTag(@PathVariable String tag,
-                                                      @RequestParam(required = false) String lastTopicId) {
-        List<TopicId> allTopic = tagRepository.findAllWithTag(tag, lastTopicId)
-                                             .stream()
-                                             .map(TagTopic::getTopicId)
-                                             .map(TopicId::of)
-                                             .collect(Collectors.toList());
+    public ResponseEntity<Page<Topic>> getTopicsByTag(@PathVariable String tag,
+                                                      @RequestParam(required = false, defaultValue = "9999") String lastTopicId,
+                                                      @ApiParam(example = "0") @RequestParam(required = false) int page) {
+
+        Page<TagTopic> allTagTopic = tagRepository.findAllWithTag(tag, lastTopicId, page);
+        List<TopicId> allTopic = allTagTopic.stream().map(TagTopic::getTopicId).map(TopicId::of).collect(Collectors.toList());
         Iterable<Topic> topics = repository.findAllById(allTopic);
-        //TODO: pagination
-        return ResponseEntity.ok(ImmutableList.copyOf(topics));
+        return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), allTagTopic.getPageable(), allTagTopic.getTotalElements()));
     }
 }
