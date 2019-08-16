@@ -40,6 +40,14 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                                                                                  .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
                                                                                          5L).withWriteCapacityUnits(3L))
                                                                                  .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+            GlobalSecondaryIndex tagSidIndex = new GlobalSecondaryIndex().withIndexName("tag-sid-index")
+                                                                         .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
+                                                                                                              .withAttributeName("tag"),
+                                                                                        new KeySchemaElement().withKeyType(KeyType.RANGE)
+                                                                                                              .withAttributeName("sid"))
+                                                                         .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
+                                                                                 1L).withWriteCapacityUnits(1L))
+                                                                         .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY));
 
             CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(TABLE_LITTLEGAS)
                                                                             .withKeySchema(new KeySchemaElement().withKeyType(KeyType.HASH)
@@ -48,7 +56,7 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                                                                                                                  .withAttributeName("sid"))
                                                                             .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(
                                                                                     15L).withWriteCapacityUnits(10L))
-                                                                            .withGlobalSecondaryIndexes(sidPidIndex, sidLastUpdatedIndex)
+                                                                            .withGlobalSecondaryIndexes(sidPidIndex, sidLastUpdatedIndex, tagSidIndex)
                                                                             .withAttributeDefinitions(new AttributeDefinition().withAttributeName(
                                                                                     "pid").withAttributeType(ScalarAttributeType.S),
                                                                                                       new AttributeDefinition().withAttributeName(
@@ -58,7 +66,11 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                                                                                                       new AttributeDefinition().withAttributeName(
                                                                                                               "lastUpdated")
                                                                                                                                .withAttributeType(
-                                                                                                                                       ScalarAttributeType.N));
+                                                                                                                                       ScalarAttributeType.N),
+                                                                                                      new AttributeDefinition().withAttributeName(
+                                                                                                              "tag")
+                                                                                                                               .withAttributeType(
+                                                                                                                                       ScalarAttributeType.S));
             db.createTable(createTableRequest);
             log.info("Table creation done");
         }

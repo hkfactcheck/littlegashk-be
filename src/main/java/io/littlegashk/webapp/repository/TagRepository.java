@@ -9,9 +9,27 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 @EnableScan
 public interface TagRepository extends DynamoDBPagingAndSortingRepository<TagTopic, TagTopicId> {
+
+    Page<TagTopic> findAllByTag(String tag, Pageable pageable);
+
+    default Set<String> findAllTags(){
+        boolean last = false;
+        Set<String> tags  = new HashSet<>();
+        while(!last) {
+            Pageable pr = PageRequest.of(0, 1000);
+            Page<TagTopic> someTags = findAllByTag("TAG", pr);
+            last = someTags.isLast();
+            tags.addAll(someTags.get().map(TagTopic::getTagString).collect(Collectors.toSet()));
+        }
+        return tags;
+    }
 
     Page<TagTopic> findTagTopicByTagKeyAndTopicIdBefore(String tagKey, String lastTopicId, Pageable pageable);
 

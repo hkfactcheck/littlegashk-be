@@ -82,7 +82,7 @@ public class Topic {
 
     @DynamoDBTypeConvertedJson
     @ApiModelProperty(position = 8)
-    private List<String> references;
+    private List<Reference> references;
 
     @DynamoDBTypeConvertedJson
     @ApiModelProperty(position = 9)

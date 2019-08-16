@@ -17,7 +17,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,13 +35,12 @@ public class TagController {
     @Autowired
     TagRepository tagRepository;
 
-    //    @ApiOperation(value="get all tags in the DB", notes="TODO: expensive operation, find ways to optimize")
-    //    @GetMapping
-    //    public ResponseEntity<Set<String>> getTags() {
-    //        Set<String> tags = new HashSet<>();
-    //        tagRepository.findAllTags().iterator().forEachRemaining(t->tags.add(t.getTagId().replaceFirst("TAG\\|","" )));
-    //        return ResponseEntity.ok(tags);
-    //    }
+    @ApiOperation(value = "get all tags in the DB", notes = "TODO: expensive operation, find ways to optimize")
+    @GetMapping
+    public ResponseEntity<Set<String>> getTags() {
+
+        return ResponseEntity.ok(tagRepository.findAllTags());
+    }
 
     @ApiOperation("get all topics with specified tag")
     @GetMapping("/{tag}/topics")
