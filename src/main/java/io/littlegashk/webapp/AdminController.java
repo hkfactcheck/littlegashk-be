@@ -56,7 +56,7 @@ public class AdminController {
     }
 
     @ApiOperation("delete a topic")
-    @DeleteMapping("/{topicId}")
+    @DeleteMapping("/topics/{topicId}")
     public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
 
         QueryResult queryResult = db.query(new QueryRequest().withTableName(TABLE_LITTLEGAS)
