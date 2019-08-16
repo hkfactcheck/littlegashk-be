@@ -43,7 +43,7 @@ public class AdminController {
 
     @ApiOperation("insert topic")
     @PostMapping("/topics")
-    public ResponseEntity<?> addTopic(@RequestBody Topic topic) {
+    public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
 
         TopicId id = TopicId.fromEventDate(topic.getEventDate());
         topic.setTopicId(id.getTopicId());
@@ -52,7 +52,7 @@ public class AdminController {
         topic.setLastUpdated(System.currentTimeMillis());
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
     }
 
     @ApiOperation("delete a topic")
@@ -96,7 +96,7 @@ public class AdminController {
 
     @ApiOperation("edit topic")
     @PutMapping("/topics")
-    public ResponseEntity<?> editTopic(@RequestBody Topic topic) {
+    public ResponseEntity<Topic> editTopic(@RequestBody Topic topic) {
 
         Topic db = topicRepository.findById(TopicId.of(topic.getTopicId())).get();
         deleteTags(db);
@@ -107,12 +107,12 @@ public class AdminController {
         db.setRelatedTopics(topic.getRelatedTopics());
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
     }
 
     @ApiOperation("insert a progress")
     @PostMapping("/topics/{parentTopicId}/progress")
-    public ResponseEntity<?> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
+    public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
 
         TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.PROGRESS.name());
         topic.setTopicId(id.getTopicId());
@@ -123,7 +123,7 @@ public class AdminController {
         saveTags(savedTopic);
 
         associatedParent(parentTopicId, savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
     }
 
     private void associatedParent(@PathVariable String topicId, Topic savedTopic) {
@@ -142,7 +142,7 @@ public class AdminController {
 
     @ApiOperation("insert a public response")
     @PostMapping("/topics/{parentTopicId}/response")
-    public ResponseEntity<?> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
+    public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
 
         TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.RESPONSE.name());
         topic.setTopicId(id.getTopicId());
@@ -153,6 +153,6 @@ public class AdminController {
         saveTags(savedTopic);
 
         associatedParent(parentTopicId, savedTopic);
-        return ResponseEntity.ok(null);
+        return ResponseEntity.ok(savedTopic);
     }
 }
