@@ -56,7 +56,7 @@ public class AdminController {
     }
 
     @ApiOperation("delete a topic")
-    @DeleteMapping("/{topicId}")
+    @DeleteMapping("/topics/{topicId}")
     public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
 
         QueryResult queryResult = db.query(new QueryRequest().withTableName(TABLE_LITTLEGAS)
@@ -64,17 +64,6 @@ public class AdminController {
                                                              .withExpressionAttributeValues(ImmutableMap.of(":pid",
                                                                                                             new AttributeValue().withS(topicId))));
         queryResult.getItems().stream().map(m -> TopicId.of(m.get("pid").getS(), m.get("sid").getS())).forEach(topicRepository::deleteById);
-        return new ResponseEntity<>(topicId, HttpStatus.OK);
-    }
-
-    @ApiOperation("delete a topic")
-    @DeleteMapping("/{topicId}")
-    public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
-        var tid = TopicId.of(topicId);
-        if (!topicRepository.existsById(tid)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        topicRepository.deleteById(tid);
         return new ResponseEntity<>(topicId, HttpStatus.OK);
     }
 
