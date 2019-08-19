@@ -14,4 +14,6 @@ public class Reference {
     private String comment;
 
     private String title;
+
+    private String imageUrl;
 }
