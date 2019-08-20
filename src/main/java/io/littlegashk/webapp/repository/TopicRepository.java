@@ -5,10 +5,12 @@ import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import org.socialsignin.spring.data.dynamodb.repository.DynamoDBCrudRepository;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
+import org.socialsignin.spring.data.dynamodb.repository.EnableScanCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
 
 @EnableScan
 public interface TopicRepository extends DynamoDBCrudRepository<Topic, TopicId> {
@@ -26,5 +28,8 @@ public interface TopicRepository extends DynamoDBCrudRepository<Topic, TopicId> 
         PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "topicId");
         return findTopicsBySortKeyAndTopicIdStartsWith(EntryType.TOPIC.name(), eventDate, pr);
     }
+
+    @EnableScanCount
+    Page<Topic> findTopicsBySortKeyIn(Pageable pageable, String... topicSortKeyValues );
 
 }

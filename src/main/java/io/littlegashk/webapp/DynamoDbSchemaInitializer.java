@@ -12,8 +12,11 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -93,14 +96,21 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
         }
 
         migrate("M1", ()->{
-            Iterable<Topic> topics = topicRepository.findAll();
-            for(Topic topic: topics){
+            List<Topic> allTopics = new ArrayList<>();
+            Page<Topic> topics = topicRepository.findTopicsBySortKeyIn(PageRequest.of(0,10), "TOPIC", "PROGRESS", "RESPONSE");
+            allTopics.addAll(topics.getContent());
+            while(topics.hasNext()){
+                topics = topicRepository.findTopicsBySortKeyIn(topics.nextPageable(), "TOPIC", "PROGRESS", "RESPONSE");
+                allTopics.addAll(topics.getContent());
+            }
+
+            for(Topic topic: allTopics){
                 List<Reference> references = topic.getReferences();
                 if(references!=null) {
                     for (Reference r : references) {
                         if (StringUtils.isNotBlank(r.getLink())) {
                             UrlTopic urlTopic = new UrlTopic();
-                            urlTopic.setUrl(r.getLink().trim());
+                            urlTopic.setUrl("URL|" + r.getLink().trim());
                             urlTopic.setTopicId(topic.getTopicId());
                             urlRepository.save(urlTopic);
                         }

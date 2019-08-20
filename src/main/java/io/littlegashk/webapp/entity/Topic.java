@@ -80,7 +80,7 @@ public class Topic {
     @ApiModelProperty(position = 7)
     private List<String> relatedTopics;
 
-    @DynamoDBTypeConvertedJson
+    @DynamoDbTypeConvertedReferenceList
     @ApiModelProperty(position = 8)
     private List<Reference> references;
 
