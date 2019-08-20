@@ -1,13 +1,11 @@
 package io.littlegashk.webapp;
 
 import com.google.common.collect.ImmutableList;
-import io.littlegashk.webapp.entity.ChildRelation;
-import io.littlegashk.webapp.entity.EntryType;
-import io.littlegashk.webapp.entity.Topic;
-import io.littlegashk.webapp.entity.TopicId;
+import io.littlegashk.webapp.entity.*;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -36,6 +34,9 @@ public class TopicController {
     TagRepository tagRepository;
 
     @Autowired
+    UrlRepository urlRepository;
+
+    @Autowired
     ChildRelationRepository childRelationRepository;
 
 
@@ -51,11 +52,22 @@ public class TopicController {
     @ApiOperation("get all topics with specified date, sorted by topicId desc")
     @GetMapping("/date/{date}")
     public ResponseEntity<Page<Topic>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date,
+                                                       @RequestParam(required = false, defaultValue = "9999") String lastId,
                                                        @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<Topic> allTopic = repository.getAllTopicByEventDate(date, page);
         return ResponseEntity.ok(allTopic);
     }
+
+
+    @ApiOperation("get all topics with specified date, sorted by topicId desc")
+    @GetMapping("/url")
+    public ResponseEntity<List<String>> getTopicIdsByUrl(@ApiParam(example = "https://google.com") @RequestParam String url) {
+
+        Page<UrlTopic> allTopic = urlRepository.findAllWithUrl(url.trim(), 0);
+        return ResponseEntity.ok(allTopic.getContent().stream().map(UrlTopic::getTopicId).collect(Collectors.toList()));
+    }
+
     @ApiOperation("get specific topic with topicId")
     @GetMapping("/{topicId}")
     public ResponseEntity<Topic> getTopicByTopicId(@ApiParam(example = "2019-08-01|1565877016020") @PathVariable String topicId) {

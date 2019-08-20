@@ -2,11 +2,22 @@ package io.littlegashk.webapp;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.*;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
+import io.littlegashk.webapp.entity.Reference;
+import io.littlegashk.webapp.entity.Topic;
+import io.littlegashk.webapp.entity.UrlTopic;
+import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.repository.UrlRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Component
 @Log4j2
@@ -15,6 +26,12 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
     public static final String TABLE_LITTLEGAS = "littlegas";
     @Autowired
     AmazonDynamoDB db;
+
+    @Autowired
+    TopicRepository topicRepository;
+
+    @Autowired
+    UrlRepository urlRepository;
 
 
     @Override
@@ -74,6 +91,41 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
             db.createTable(createTableRequest);
             log.info("Table creation done");
         }
+
+        migrate("M1", ()->{
+            Iterable<Topic> topics = topicRepository.findAll();
+            for(Topic topic: topics){
+                List<Reference> references = topic.getReferences();
+                if(references!=null) {
+                    for (Reference r : references) {
+                        if (StringUtils.isNotBlank(r.getLink())) {
+                            UrlTopic urlTopic = new UrlTopic();
+                            urlTopic.setUrl(r.getLink().trim());
+                            urlTopic.setTopicId(topic.getTopicId());
+                            urlRepository.save(urlTopic);
+                        }
+                    }
+                }
+            }
+        });
+
+
     }
 
+    private void migrate(String mid, Runnable perform){
+        List<Map<String, AttributeValue>> migrationRecord = db.query(new QueryRequest().withTableName(TABLE_LITTLEGAS)
+                                                                                       .withKeyConditionExpression("pid = :pid AND sid = :sid")
+                                                                                       .withExpressionAttributeValues(Map.of(":pid",
+                                                                                                                             new AttributeValue().withS(
+                                                                                                                                     "migration"),
+                                                                                                                             ":sid",
+                                                                                                                             new AttributeValue().withS(
+                                                                                                                                     mid))))
+                                                              .getItems();
+        if (migrationRecord.size()==0){
+            perform.run();;
+        }
+
+        db.putItem(TABLE_LITTLEGAS, Map.of("pid", new AttributeValue().withS("migration"), "sid", new AttributeValue().withS(mid)));
+    }
 }

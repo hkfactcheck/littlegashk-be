@@ -5,10 +5,12 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.google.common.collect.ImmutableMap;
+import com.nimbusds.oauth2.sdk.util.StringUtils;
 import io.littlegashk.webapp.entity.*;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j2;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,6 +44,9 @@ public class AdminController {
     @Autowired
     AmazonDynamoDB db;
 
+    @Autowired
+    UrlRepository urlRepository;
+
     @ApiOperation("insert topic")
     @PostMapping("/topics")
     public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
@@ -52,6 +58,7 @@ public class AdminController {
         topic.setLastUpdated(System.currentTimeMillis());
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
+        saveUrls(savedTopic);
         return ResponseEntity.ok(savedTopic);
     }
 
@@ -67,38 +74,13 @@ public class AdminController {
         return new ResponseEntity<>(topicId, HttpStatus.OK);
     }
 
-    private void deleteTags(Topic existing) {
-
-        if (existing.getTags() != null && existing.getTags().size() > 0) {
-            Set<TagTopic> currentSet = existing.getTags()
-                                               .stream()
-                                               .map(s -> TagTopicId.of(existing.getTopicId(), s))
-                                               .map(TagTopic::new)
-                                               .collect(Collectors.toSet());
-
-            tagRepository.deleteAll(currentSet);
-        }
-    }
-
-
-    private void saveTags(Topic updated) {
-
-        if (updated.getTags() != null && updated.getTags().size() > 0) {
-            Set<TagTopic> newTagList = updated.getTags()
-                                              .stream()
-                                              .map(s -> TagTopicId.of(updated.getTopicId(), s))
-                                              .map(TagTopic::new)
-                                              .collect(Collectors.toSet());
-
-            tagRepository.saveAll(newTagList);
-        }
-    }
 
     @ApiOperation("edit topic")
     @PutMapping("/topics")
     public ResponseEntity<Topic> editTopic(@RequestBody Topic topic) {
 
         Topic db = topicRepository.findById(TopicId.of(topic.getTopicId())).get();
+        deleteUrls(db);
         deleteTags(db);
         db.setTitle(topic.getTitle());
         db.setSummary(topic.getSummary());
@@ -107,6 +89,7 @@ public class AdminController {
         db.setRelatedTopics(topic.getRelatedTopics());
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
+        saveUrls(savedTopic);
         return ResponseEntity.ok(savedTopic);
     }
 
@@ -121,7 +104,7 @@ public class AdminController {
         topic.setLastUpdated(System.currentTimeMillis());
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
-
+        saveUrls(savedTopic);
         associatedParent(parentTopicId, savedTopic);
         return ResponseEntity.ok(savedTopic);
     }
@@ -151,8 +134,65 @@ public class AdminController {
         topic.setLastUpdated(System.currentTimeMillis());
         Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
-
+        saveUrls(savedTopic);
         associatedParent(parentTopicId, savedTopic);
         return ResponseEntity.ok(savedTopic);
+    }
+
+
+    private void deleteUrls(Topic existing) {
+
+        if (existing.getReferences() != null && existing.getReferences().size() > 0) {
+            Set<UrlTopic> currentSet = existing.getReferences()
+                                            .stream().filter(r->StringUtils.isNotBlank(r.getLink()))
+                                            .map(r -> UrlTopicId.of(existing.getTopicId(), r.getLink()))
+                                            .map(UrlTopic::new)
+                                            .collect(Collectors.toSet());
+
+            urlRepository.deleteAll(currentSet);
+        }
+    }
+
+
+    private void saveUrls(Topic updated) {
+
+        if (updated.getReferences() != null && updated.getReferences().size() > 0) {
+
+
+            Set<UrlTopic> currentSet = updated.getReferences()
+                                               .stream().filter(r->StringUtils.isNotBlank(r.getLink()))
+                                               .map(r -> UrlTopicId.of(updated.getTopicId(), r.getLink()))
+                                               .map(UrlTopic::new)
+                                               .collect(Collectors.toSet());
+
+            urlRepository.saveAll(currentSet);
+        }
+    }
+
+    private void deleteTags(Topic existing) {
+
+        if (existing.getTags() != null && existing.getTags().size() > 0) {
+            Set<TagTopic> currentSet = existing.getTags()
+                                               .stream()
+                                               .map(s -> TagTopicId.of(existing.getTopicId(), s))
+                                               .map(TagTopic::new)
+                                               .collect(Collectors.toSet());
+
+            tagRepository.deleteAll(currentSet);
+        }
+    }
+
+
+    private void saveTags(Topic updated) {
+
+        if (updated.getTags() != null && updated.getTags().size() > 0) {
+            Set<TagTopic> newTagList = updated.getTags()
+                                              .stream()
+                                              .map(s -> TagTopicId.of(updated.getTopicId(), s))
+                                              .map(TagTopic::new)
+                                              .collect(Collectors.toSet());
+
+            tagRepository.saveAll(newTagList);
+        }
     }
 }
