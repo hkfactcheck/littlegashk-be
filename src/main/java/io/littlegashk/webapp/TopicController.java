@@ -51,11 +51,9 @@ public class TopicController {
 
     @ApiOperation("get all topics with specified date, sorted by topicId desc")
     @GetMapping("/date/{date}")
-    public ResponseEntity<Page<Topic>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date,
-                                                       @RequestParam(required = false, defaultValue = "9999") String lastId,
-                                                       @ApiParam(example= "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
+    public ResponseEntity<Page<Topic>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date) {
 
-        Page<Topic> allTopic = repository.getAllTopicByEventDate(date, page);
+        Page<Topic> allTopic = repository.getAllTopicByEventDate(date);
         return ResponseEntity.ok(allTopic);
     }
 

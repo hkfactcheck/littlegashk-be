@@ -24,8 +24,8 @@ public interface TopicRepository extends DynamoDBCrudRepository<Topic, TopicId> 
         return findTopicsBySortKeyAndLastUpdatedIsBefore(EntryType.TOPIC.name(), lastUpdated, pr);
     }
 
-    default Page<Topic> getAllTopicByEventDate(String eventDate, int page) {
-        PageRequest pr = PageRequest.of(page, 10, Sort.Direction.DESC, "topicId");
+    default Page<Topic> getAllTopicByEventDate(String eventDate) {
+        PageRequest pr = PageRequest.of(0, 10000, Sort.Direction.DESC, "topicId");
         return findTopicsBySortKeyAndTopicIdStartsWith(EntryType.TOPIC.name(), eventDate, pr);
     }
 
