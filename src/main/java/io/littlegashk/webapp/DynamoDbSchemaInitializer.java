@@ -19,8 +19,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 @Component
 @Log4j2
@@ -35,6 +33,9 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
 
     @Autowired
     UrlRepository urlRepository;
+
+    @Autowired
+    AdminController controller;
 
 
     @Override
@@ -116,6 +117,21 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
                         }
                     }
                 }
+            }
+        });
+
+        migrate("M2", ()->{
+            List<Topic> allTopics = new ArrayList<>();
+            Page<Topic> topics = topicRepository.findTopicsBySortKeyIn(PageRequest.of(0,10), "TOPIC");
+            allTopics.addAll(topics.getContent());
+            while(topics.hasNext()){
+                topics = topicRepository.findTopicsBySortKeyIn(topics.nextPageable(), "TOPIC");
+                allTopics.addAll(topics.getContent());
+            }
+
+            for(Topic topic: allTopics){
+                controller.findAndAddRelatedTopic(topic);
+                topicRepository.save(topic);
             }
         });
 

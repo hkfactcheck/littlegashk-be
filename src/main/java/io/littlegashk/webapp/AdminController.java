@@ -4,7 +4,10 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import io.littlegashk.webapp.entity.*;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
@@ -15,14 +18,13 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.littlegashk.webapp.DynamoDbSchemaInitializer.TABLE_LITTLEGAS;
@@ -56,11 +58,47 @@ public class AdminController {
         topic.setSortKey(id.getSortKey());
         topic.setType(EntryType.TOPIC);
         topic.setLastUpdated(System.currentTimeMillis());
+        findAndAddRelatedTopic(topic);
         final Topic savedTopic = topicRepository.save(topic);
         saveTags(savedTopic);
         saveUrls(savedTopic);
         return ResponseEntity.ok(savedTopic);
     }
+
+     void findAndAddRelatedTopic(Topic topic) {
+
+        final Multimap<String, String> topicIdToTags = ArrayListMultimap.create();
+        for (String t : topic.getTags()) {
+            Page<TagTopic> page = null;
+            do {
+                page = tagRepository.findAllWithTag(t, "9999", page == null ? 0 : page.nextPageable().getPageNumber());
+                page.stream()
+                    .filter(tt -> !tt.getTopicId().equals(topic.getTopicId()) && topicRepository.findById(TopicId.of(tt.getTopicId())).isPresent())
+                    .forEach(tt -> {
+
+                        topicIdToTags.put(tt.getTopicId(), tt.getTagString());
+
+                    });
+            } while (!page.isLast());
+        }
+
+        TreeMultimap<Integer, String> sorted = TreeMultimap.create(Comparator.reverseOrder(), Comparator.naturalOrder());
+        for (Map.Entry<String, Collection<String>> entry : topicIdToTags.asMap().entrySet()) {
+            sorted.put(entry.getValue().size(), entry.getKey());
+        }
+        int i =0;
+        for (Map.Entry<Integer, String> entry: sorted.entries()){
+            if(i==5) break;
+            String topicId = entry.getValue();
+            if(topic.getRelatedTopics()==null){
+                topic.setRelatedTopics(new HashSet<>());
+            }
+            topic.getRelatedTopics().add(topicId);
+
+            i++;
+        }
+    }
+
 
     @ApiOperation("delete a topic")
     @DeleteMapping("/topics/{topicId}")
@@ -87,6 +125,7 @@ public class AdminController {
         db.setTags(topic.getTags());
         db.setReferences(topic.getReferences());
         db.setRelatedTopics(topic.getRelatedTopics());
+        findAndAddRelatedTopic(db);
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
         saveUrls(savedTopic);
@@ -144,10 +183,11 @@ public class AdminController {
 
         if (existing.getReferences() != null && existing.getReferences().size() > 0) {
             Set<UrlTopic> currentSet = existing.getReferences()
-                                            .stream().filter(r->StringUtils.isNotBlank(r.getLink()))
-                                            .map(r -> UrlTopicId.of(existing.getTopicId(), r.getLink()))
-                                            .map(UrlTopic::new)
-                                            .collect(Collectors.toSet());
+                                               .stream()
+                                               .filter(r -> StringUtils.isNotBlank(r.getLink()))
+                                               .map(r -> UrlTopicId.of(existing.getTopicId(), r.getLink()))
+                                               .map(UrlTopic::new)
+                                               .collect(Collectors.toSet());
 
             urlRepository.deleteAll(currentSet);
         }
@@ -160,10 +200,11 @@ public class AdminController {
 
 
             Set<UrlTopic> currentSet = updated.getReferences()
-                                               .stream().filter(r->StringUtils.isNotBlank(r.getLink()))
-                                               .map(r -> UrlTopicId.of(updated.getTopicId(), r.getLink()))
-                                               .map(UrlTopic::new)
-                                               .collect(Collectors.toSet());
+                                              .stream()
+                                              .filter(r -> StringUtils.isNotBlank(r.getLink()))
+                                              .map(r -> UrlTopicId.of(updated.getTopicId(), r.getLink()))
+                                              .map(UrlTopic::new)
+                                              .collect(Collectors.toSet());
 
             urlRepository.saveAll(currentSet);
         }
