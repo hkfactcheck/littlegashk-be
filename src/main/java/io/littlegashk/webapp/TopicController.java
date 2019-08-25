@@ -18,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,10 +54,12 @@ public class TopicController {
 
     @ApiOperation("get all topics with specified date, sorted by topicId desc")
     @GetMapping("/date/{date}")
-    public ResponseEntity<Page<Topic>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date) {
-
+    public ResponseEntity<Map<String, Object>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("date", date);
         Page<Topic> allTopic = repository.getAllTopicByEventDate(date);
-        return ResponseEntity.ok(allTopic);
+        result.put("topics", allTopic.getContent());
+        return ResponseEntity.ok(result);
     }
 
 
