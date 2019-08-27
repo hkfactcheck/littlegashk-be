@@ -75,7 +75,7 @@ public class TopicController {
   }
 
 
-  @ApiOperation("get all topics with specified date, sorted by topicId desc")
+  @ApiOperation("get all topics/progresses/responses with specified url")
   @GetMapping("/url")
   public ResponseEntity<List<Topic>> getTopicsByUrl(@ApiParam(example = "https://google.com") @RequestParam String url) {
 
@@ -91,8 +91,8 @@ public class TopicController {
   @Autowired
   AmazonDynamoDB db;
 
-  @ApiOperation("get all topics with specified url")
-  @GetMapping("/topic-level-by-url")
+  @ApiOperation("return all TOP LEVEL topics with children containing the given URL ")
+  @GetMapping("/top-level-by-url")
   public ResponseEntity<List<Topic>> getTopLevelByUrl(@ApiParam(example = "https://google.com") @RequestParam String url) {
 
     Page<UrlTopic> allTopic = urlRepository.findAllWithUrl(url.trim(), 0);
