@@ -125,6 +125,8 @@ public class AdminController {
         db.setTags(topic.getTags());
         db.setReferences(topic.getReferences());
         db.setRelatedTopics(topic.getRelatedTopics());
+        db.setImageUrl(topic.getImageUrl());
+        db.setUid(topic.getUid());
         findAndAddRelatedTopic(db);
         Topic savedTopic = topicRepository.save(db);
         saveTags(savedTopic);
