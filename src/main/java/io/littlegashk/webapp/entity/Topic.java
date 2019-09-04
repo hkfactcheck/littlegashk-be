@@ -96,5 +96,11 @@ public class Topic {
     @ApiModelProperty(position = 12)
     private String eventDate;
 
+    @ApiModelProperty(position = 13)
+    private String imageUrl;
+
+    @ApiModelProperty(position = 14)
+    private String uid;
+
 
 }
