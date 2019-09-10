@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.littlegashk.webapp.entity.ChildRelation;
 import io.littlegashk.webapp.entity.EntryType;
@@ -18,6 +17,7 @@ import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -147,7 +147,9 @@ public class TopicController {
                                       .map(s -> TopicId.of(s, EntryType.PROGRESS))
                                       .collect(Collectors.toList());
     Iterable<Topic> topics = repository.findAllById(childIds);
-    return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), relations.getPageable(), relations.getTotalElements()));
+    List<Topic> result = Lists.newArrayList(topics);
+    result.sort(Comparator.comparing(Topic::getTopicId).reversed());
+    return ResponseEntity.ok(new PageImpl<>(result, relations.getPageable(), relations.getTotalElements()));
   }
 
   @ApiOperation("get public responses on a topic")
@@ -162,7 +164,9 @@ public class TopicController {
                                       .map(s -> TopicId.of(s, EntryType.RESPONSE))
                                       .collect(Collectors.toList());
     Iterable<Topic> topics = repository.findAllById(childIds);
-    return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), relations.getPageable(), relations.getTotalElements()));
+    List<Topic> result = Lists.newArrayList(topics);
+    result.sort(Comparator.comparing(Topic::getTopicId).reversed());
+    return ResponseEntity.ok(new PageImpl<>(result, relations.getPageable(), relations.getTotalElements()));
   }
 
 }
