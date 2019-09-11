@@ -131,8 +131,7 @@ public class TopicController {
   @GetMapping("/{topicId}")
   public ResponseEntity<Topic> getTopicByTopicId(@ApiParam(example = "2019-08-01|1565877016020") @PathVariable String topicId) {
 
-    return ResponseEntity.ok(repository.findById(TopicId.of(topicId))
-                                       .get());
+    return ResponseEntity.ok(repository.findByTopicId(topicId));
   }
 
   @ApiOperation("get topic progresses")
