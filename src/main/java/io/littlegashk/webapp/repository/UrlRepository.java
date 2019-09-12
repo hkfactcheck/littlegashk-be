@@ -1,9 +1,11 @@
 package io.littlegashk.webapp.repository;
 
+import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.entity.UrlTopicId;
 import org.socialsignin.spring.data.dynamodb.repository.DynamoDBPagingAndSortingRepository;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
+import org.socialsignin.spring.data.dynamodb.repository.EnableScanCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +38,13 @@ public interface UrlRepository extends DynamoDBPagingAndSortingRepository<UrlTop
     default Page<UrlTopic> findAllWithUrl(String url, int page) {
         PageRequest pr = PageRequest.of(page, 1000, Sort.Direction.DESC, "topicId");
         return findUrlTopicByUrl("URL|" + url, pr);
+    }
+@EnableScanCount
+    Page<UrlTopic> findTagTopicsByTopicIdAndUrlStartsWithAndTag(String topicId, String url, String tag, Pageable pageable);
+
+    default Page<UrlTopic> findTopicUrls(String topicId){
+        PageRequest pr = PageRequest.of(0, 1000);
+        return findTagTopicsByTopicIdAndUrlStartsWithAndTag(topicId, "URL|", "URL", pr);
     }
 
 }

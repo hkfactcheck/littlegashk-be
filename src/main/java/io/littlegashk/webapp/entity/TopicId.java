@@ -18,10 +18,6 @@ public class TopicId implements Serializable {
     @DynamoDBRangeKey
     private String sortKey;
 
-    public static TopicId fromEventDate (String eventDate) {
-        return new TopicId(eventDate + "|" + System.currentTimeMillis(), EntryType.TOPIC.name());
-    }
-
     public static TopicId fromEventDate (String eventDate, String sortKey) {
         return new TopicId(eventDate + "|" + System.currentTimeMillis(), sortKey);
     }

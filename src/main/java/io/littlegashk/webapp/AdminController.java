@@ -28,9 +28,12 @@ import io.swagger.annotations.ApiOperation;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +44,7 @@ import javax.validation.ValidationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,6 +53,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -74,8 +79,8 @@ public class AdminController {
   @ApiOperation("insert topic")
   @PostMapping("/topics")
   public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
-    validateDate(topic.getEventDate());
-    TopicId id = TopicId.fromEventDate(topic.getEventDate());
+    String idDate = validateAndGetIdFormatDate(topic.getEventDate());
+    TopicId id = TopicId.fromEventDate(idDate, EntryType.TOPIC.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.TOPIC);
@@ -179,8 +184,8 @@ public class AdminController {
   @ApiOperation("insert a progress")
   @PostMapping("/topics/{parentTopicId}/progress")
   public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
-    validateDate(topic.getEventDate());
-    TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.PROGRESS.name());
+    String idDate = validateAndGetIdFormatDate(topic.getEventDate());
+    TopicId id = TopicId.fromEventDate(idDate, EntryType.PROGRESS.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.PROGRESS);
@@ -210,8 +215,8 @@ public class AdminController {
   @ApiOperation("insert a public response")
   @PostMapping("/topics/{parentTopicId}/response")
   public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
-    validateDate(topic.getEventDate());
-    TopicId id = TopicId.fromEventDate(topic.getEventDate(), EntryType.RESPONSE.name());
+    String idDate = validateAndGetIdFormatDate(topic.getEventDate());
+    TopicId id = TopicId.fromEventDate(idDate, EntryType.RESPONSE.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.RESPONSE);
@@ -221,6 +226,76 @@ public class AdminController {
     saveUrls(savedTopic);
     associatedParent(parentTopicId, savedTopic);
     return ResponseEntity.ok(savedTopic);
+  }
+
+  @ApiOperation("update event date")
+  @PostMapping("/topics/{oldTopicId}/changeDate")
+  public ResponseEntity<Topic> changeDate(@PathVariable String oldTopicId, @RequestParam String newDate){
+    String idDate = validateAndGetIdFormatDate(newDate);
+    //Change topic itself
+    Topic topic = topicRepository.findByTopicId(oldTopicId);
+    topicRepository.deleteById(TopicId.of(topic.getTopicId(), topic.getSortKey()));
+    String newTopicId = TopicId.fromEventDate(idDate, topic.getSortKey()).getTopicId();
+    topic.setTopicId(newTopicId);
+    topic.setEventDate(newDate);
+    topicRepository.save(topic);
+
+    //Change all child relationships
+    childRelationRepository.getProgress(oldTopicId, "9999",0, 1000).stream().forEach(cr->{
+      childRelationRepository.delete(cr);
+      cr.setTopicId(newTopicId);
+      childRelationRepository.save(cr);
+    });
+
+    childRelationRepository.getResponse(oldTopicId, "9999",0, 1000).stream().forEach(cr->{
+      childRelationRepository.delete(cr);
+      cr.setTopicId(newTopicId);
+      childRelationRepository.save(cr);
+    });
+
+    //Change all parent relationships
+    childRelationRepository.getParents(oldTopicId).stream().forEach(cr->{
+      childRelationRepository.delete(cr);
+      cr.setSortKey(topic.getType().name() + "|" + newTopicId);
+      childRelationRepository.save(cr);
+    });
+
+    //Change all related topic
+    Page<Topic> topics = topicRepository.findTopicsBySortKeyIn(PageRequest.of(0, 100), "TOPIC", "PROGRESS", "RESPONSE");
+    List<Topic> allTopics = new ArrayList<>(topics.getContent());
+    while(topics.hasNext()){
+      topics = topicRepository.findTopicsBySortKeyIn(topics.nextPageable(), "TOPIC", "PROGRESS", "RESPONSE");
+      allTopics.addAll(topics.getContent());
+    }
+
+    allTopics.forEach(t->{
+
+      if(t.getRelatedTopics()!=null && t.getRelatedTopics().contains(oldTopicId)){
+        t.getRelatedTopics().remove(oldTopicId);
+        t.getRelatedTopics().add(newTopicId);
+        topicRepository.save(t);
+      }
+    });
+
+    //Change all tag topic association
+    tagRepository.findTopicTags(oldTopicId).stream().forEach(tt->{
+      tagRepository.delete(tt);
+      tt.setTopicId(newTopicId);
+      tagRepository.save(tt);
+    });
+
+    //Change all url topic association
+
+    urlRepository.findTopicUrls(oldTopicId).stream().forEach(tt->{
+      urlRepository.delete(tt);
+      tt.setTopicId(newTopicId);
+      urlRepository.save(tt);
+    });
+
+
+
+
+    return ResponseEntity.ok(topic);
   }
 
 
@@ -285,12 +360,16 @@ public class AdminController {
     }
   }
 
-  private void validateDate(String date) throws ValidationException {
-    DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+  private String validateAndGetIdFormatDate(String date) throws ValidationException {
+    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    DateFormat idFormat = new SimpleDateFormat("yyyyMMddHHmmss");
     try {
-      format.parse(date);
+      Date parsed= format.parse(date);
+      return idFormat.format(parsed);
     } catch (ParseException e) {
-      throw new ValidationException("Topic must have a valid date yyyy-MM-dd");
+      throw new ValidationException("Topic must have a valid date yyyy-MM-dd HH:mm:ss");
     }
   }
+
+
 }
