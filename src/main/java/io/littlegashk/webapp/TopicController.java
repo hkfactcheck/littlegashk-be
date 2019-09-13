@@ -69,7 +69,7 @@ public class TopicController {
   public ResponseEntity<Map<String, Object>> getTopicsByDate(@ApiParam(example = "2019-08-01") @PathVariable String date) {
     Map<String, Object> result = new HashMap<>();
     result.put("date", date);
-    Page<Topic> allTopic = repository.getAllTopicByEventDate(date);
+    Page<Topic> allTopic = repository.getAllTopicByEventDate(date.replaceAll("-",""));
     result.put("topics", allTopic.getContent());
     return ResponseEntity.ok(result);
   }
