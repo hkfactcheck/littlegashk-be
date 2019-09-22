@@ -50,4 +50,8 @@ public interface TagRepository extends DynamoDBPagingAndSortingRepository<TagTop
         return findTagTopicByTagKeyAndTopicIdBefore("TAG|" + tag, lastTopicId, pr);
     }
 
+    default Page<TagTopic> findAllWithTag(String tag, String lastTopicId, Pageable pr) {
+        return findTagTopicByTagKeyAndTopicIdBefore("TAG|" + tag, lastTopicId, pr);
+    }
+
 }

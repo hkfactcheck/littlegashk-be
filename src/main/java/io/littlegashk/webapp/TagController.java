@@ -7,9 +7,11 @@ import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.util.CommonUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.stream.StreamSupport;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -49,14 +51,30 @@ public class TagController {
                                                       @ApiParam(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<TagTopic> allTagTopic = tagRepository.findAllWithTag(tag, lastTopicId, page);
-        List<TopicId> allTopic = allTagTopic.stream()
-                                            .map(TagTopic::getTopicId)
-                                            .flatMap(topicId -> Stream.of(TopicId.of(topicId, EntryType.TOPIC),
-                                                                          TopicId.of(topicId, EntryType.PROGRESS),
-                                                                          TopicId.of(topicId, EntryType.RESPONSE)))
-                                            .collect(Collectors.toList());
-
-        Iterable<Topic> topics = repository.findAllById(allTopic);
+        Iterable<Topic> topics = resolveTopics(allTagTopic.stream());
         return ResponseEntity.ok(new PageImpl<>(ImmutableList.copyOf(topics), allTagTopic.getPageable(), allTagTopic.getTotalElements()));
+    }
+
+    private Iterable<Topic> resolveTopics(Stream<TagTopic> stream) {
+        List<TopicId> allTopic = stream.map(TagTopic::getTopicId)
+                                       .flatMap(topicId -> Stream.of(TopicId.of(topicId, EntryType.TOPIC), TopicId.of(topicId, EntryType.PROGRESS),
+                                                                     TopicId.of(topicId, EntryType.RESPONSE)))
+                                       .collect(Collectors.toList());
+
+        return repository.findAllById(allTopic);
+    }
+
+    @ApiOperation("get all topics with multiple tags. (AND relation)")
+    @GetMapping("/searchByTags")
+    public ResponseEntity<List<Topic>> getTopicsByTag(@RequestParam List<String> tags){
+
+        if(tags.isEmpty()){
+            return ResponseEntity.badRequest().build();
+        }else{
+            List<TagTopic> allTagTopic=CommonUtils.readAllPages(p->tagRepository.findAllWithTag(tags.get(0), "9999", p));
+            Iterable<Topic> topics = resolveTopics(allTagTopic.stream());
+            List<Topic> filtered = StreamSupport.stream(topics.spliterator(), true).filter(t-> t.getTags().containsAll(tags)).collect(Collectors.toList());
+            return ResponseEntity.ok(filtered);
+        }
     }
 }
