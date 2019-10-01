@@ -102,5 +102,8 @@ public class Topic {
     @ApiModelProperty(position = 14)
     private String uid;
 
+    @ApiModelProperty(position = 15)
+    private Integer seq;
+
 
 }

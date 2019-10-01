@@ -23,8 +23,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         .and()
         .csrf().disable()
         .authorizeRequests()
-//        .antMatchers("/admin/**")
-//        .authenticated()
+        //.antMatchers("/admin/**").hasAnyAuthority("SCOPE_https://api.littlegashk.ga/bot","SCOPE_https://api.littlegashk.ga/admin")
         .antMatchers("/bot/**").hasAuthority("SCOPE_https://api.littlegashk.ga/bot")
         .antMatchers("/**").permitAll()
         // this disables session creation on Spring Security

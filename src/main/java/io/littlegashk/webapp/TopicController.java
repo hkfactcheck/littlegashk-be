@@ -11,12 +11,14 @@ import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
+import io.littlegashk.webapp.repository.SequencedTopicCache;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.sound.midi.Sequence;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -53,6 +56,9 @@ public class TopicController {
 
   @Autowired
   ChildRelationRepository childRelationRepository;
+
+  @Autowired
+  SequencedTopicCache sequencedTopicCache;
 
 
   @ApiOperation("get all topics, sorted by lastUpdated date desc")
@@ -167,5 +173,19 @@ public class TopicController {
     result.sort(Comparator.comparing(Topic::getTopicId).reversed());
     return ResponseEntity.ok(new PageImpl<>(result, relations.getPageable(), relations.getTotalElements()));
   }
+
+
+  @ApiOperation("get public responses on a topic")
+  @GetMapping("/sequenced")
+  public ResponseEntity<List<Topic>> getSequencedTopic(){
+    Set<String> topicIds = sequencedTopicCache.getSequencedTopicIds();
+    Iterable<Topic> topics = repository.findAllById(topicIds.stream().map(TopicId::of).collect(Collectors.toList()));
+    List<Topic> allTopics = Lists.newArrayList(topics);
+    allTopics.sort(Comparator.comparing(Topic::getSeq).reversed());
+    return ResponseEntity.ok(allTopics);
+
+  }
+
+
 
 }

@@ -20,6 +20,7 @@ import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.entity.UrlTopicId;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
+import io.littlegashk.webapp.repository.SequencedTopicCache;
 import io.littlegashk.webapp.repository.TagRepository;
 import io.littlegashk.webapp.repository.TopicRepository;
 import io.littlegashk.webapp.repository.UrlRepository;
@@ -76,6 +77,9 @@ public class AdminController {
   @Autowired
   UrlRepository urlRepository;
 
+  @Autowired
+  SequencedTopicCache sequencedTopicCache;
+
   @ApiOperation("insert topic")
   @PostMapping("/topics")
   public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
@@ -89,6 +93,9 @@ public class AdminController {
     final Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
     saveUrls(savedTopic);
+    if(topic.getSeq()!=null && topic.getSeq()>1){
+      sequencedTopicCache.clear();
+    }
     return ResponseEntity.ok(savedTopic);
   }
 
@@ -195,6 +202,22 @@ public class AdminController {
     saveUrls(savedTopic);
     associatedParent(parentTopicId, savedTopic);
     return ResponseEntity.ok(savedTopic);
+  }
+
+  @ApiOperation("change topic sequence")
+  @PutMapping("/topics/{topicId}/sequence")
+  public ResponseEntity<?> changeSequence(HttpServletRequest req, @PathVariable String topicId, @RequestParam Integer sequence){
+
+    Optional<Topic> optionalTopic = topicRepository.findById(TopicId.of(topicId));
+    if (optionalTopic.isPresent()) {
+      Topic target = optionalTopic.get();
+      target.setSeq(sequence);
+      sequencedTopicCache.clear();
+      topicRepository.save(target);
+      return ResponseEntity.ok(null);
+    }else{
+      return ResponseEntity.badRequest().build();
+    }
   }
 
   private void associatedParent(@PathVariable String topicId, Topic savedTopic) {

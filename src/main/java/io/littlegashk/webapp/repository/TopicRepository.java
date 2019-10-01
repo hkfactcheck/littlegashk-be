@@ -7,6 +7,7 @@ import java.util.List;
 import org.socialsignin.spring.data.dynamodb.repository.DynamoDBCrudRepository;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScan;
 import org.socialsignin.spring.data.dynamodb.repository.EnableScanCount;
+import org.socialsignin.spring.data.dynamodb.repository.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,7 @@ public interface TopicRepository extends DynamoDBCrudRepository<Topic, TopicId> 
                                                                  .findFirst()
                                                                  .orElse(null);
   }
+
 
   @EnableScanCount
   Page<Topic> findTopicsBySortKeyIn(Pageable pageable, String... topicSortKeyValues);
