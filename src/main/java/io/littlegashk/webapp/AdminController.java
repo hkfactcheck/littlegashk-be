@@ -82,13 +82,13 @@ public class AdminController {
 
   @ApiOperation("insert topic")
   @PostMapping("/topics")
-  public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) {
+  public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) throws ParseException {
     String idDate = validateAndGetIdFormatDate(topic.getEventDate());
     TopicId id = TopicId.fromEventDate(idDate, EntryType.TOPIC.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.TOPIC);
-    topic.setLastUpdated(System.currentTimeMillis());
+    topic.setLastUpdated(parseEventDate(topic.getEventDate()).getTime());
     findAndAddRelatedTopic(topic);
     final Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
@@ -190,13 +190,14 @@ public class AdminController {
 
   @ApiOperation("insert a progress")
   @PostMapping("/topics/{parentTopicId}/progress")
-  public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
+  public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic)
+      throws ParseException {
     String idDate = validateAndGetIdFormatDate(topic.getEventDate());
     TopicId id = TopicId.fromEventDate(idDate, EntryType.PROGRESS.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.PROGRESS);
-    topic.setLastUpdated(System.currentTimeMillis());
+    topic.setLastUpdated(parseEventDate(topic.getEventDate()).getTime());
     Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
     saveUrls(savedTopic);
@@ -220,12 +221,21 @@ public class AdminController {
     }
   }
 
-  private void associatedParent(@PathVariable String topicId, Topic savedTopic) {
+  private Date parseEventDate(String eventDate) throws ParseException {
+    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    return format.parse(eventDate);
+  }
+
+  private void associatedParent(@PathVariable String topicId, Topic savedTopic) throws ParseException {
 
     Optional<Topic> parent = topicRepository.findById(TopicId.of(topicId));
     if (parent.isPresent()) {
       Topic parentTopic = parent.get();
-      parentTopic.setLastUpdated(System.currentTimeMillis());
+      long childDate = parseEventDate(savedTopic.getEventDate()).getTime();
+      if(childDate > parentTopic.getLastUpdated()){
+        parentTopic.setLastUpdated(childDate);
+      }
+
       topicRepository.save(parentTopic);
       ChildRelation childRelation = new ChildRelation();
       childRelation.setTopicId(parentTopic.getTopicId());
@@ -237,13 +247,14 @@ public class AdminController {
 
   @ApiOperation("insert a public response")
   @PostMapping("/topics/{parentTopicId}/response")
-  public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic) {
+  public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic)
+      throws ParseException {
     String idDate = validateAndGetIdFormatDate(topic.getEventDate());
     TopicId id = TopicId.fromEventDate(idDate, EntryType.RESPONSE.name());
     topic.setTopicId(id.getTopicId());
     topic.setSortKey(id.getSortKey());
     topic.setType(EntryType.RESPONSE);
-    topic.setLastUpdated(System.currentTimeMillis());
+    topic.setLastUpdated(parseEventDate(topic.getEventDate()).getTime());
     Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
     saveUrls(savedTopic);
@@ -253,7 +264,7 @@ public class AdminController {
 
   @ApiOperation("update event date")
   @PostMapping("/topics/{oldTopicId}/changeDate")
-  public ResponseEntity<Topic> changeDate(@PathVariable String oldTopicId, @RequestParam String newDate){
+  public ResponseEntity<Topic> changeDate(@PathVariable String oldTopicId, @RequestParam String newDate) throws ParseException {
     String idDate = validateAndGetIdFormatDate(newDate);
     //Change topic itself
     Topic topic = topicRepository.findByTopicId(oldTopicId);
@@ -261,6 +272,10 @@ public class AdminController {
     String newTopicId = TopicId.fromEventDate(idDate, topic.getSortKey()).getTopicId();
     topic.setTopicId(newTopicId);
     topic.setEventDate(newDate);
+    long newTime = parseEventDate(newDate).getTime();
+    if(newTime> topic.getLastUpdated()){
+      topic.setLastUpdated(newTime);
+    }
     topicRepository.save(topic);
 
     //Change all child relationships
