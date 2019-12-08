@@ -5,12 +5,10 @@ import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
-import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.repository.OldTagRepository;
+import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.util.CommonUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/tags")
-@Api(value = "Tags")
 @Log4j2
 public class TagController {
 
@@ -39,18 +36,18 @@ public class TagController {
     @Autowired
     OldTagRepository oldTagRepository;
 
-    @ApiOperation(value = "get all tags in the DB", notes = "TODO: expensive operation, find ways to optimize")
+    @Operation(description = "get all tags in the DB")
     @GetMapping
     public ResponseEntity<Set<String>> getTags() {
 
         return ResponseEntity.ok(oldTagRepository.findAllTags());
     }
 
-    @ApiOperation("get all topics with specified tag")
+    @Operation(description ="get all topics with specified tag")
     @GetMapping("/{tag}/topics")
     public ResponseEntity<Page<Topic>> getTopicsByTag(@PathVariable String tag,
                                                       @RequestParam(required = false, defaultValue = "9999") String lastTopicId,
-                                                      @ApiParam(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
+                                                      @RequestParam(required = false, defaultValue = "0") Integer page) {
 
         Page<TagTopic> allTagTopic = oldTagRepository.findAllWithTag(tag, lastTopicId, page);
         Iterable<Topic> topics = resolveTopics(allTagTopic.stream());
@@ -66,7 +63,7 @@ public class TagController {
         return repository.findAllById(allTopic);
     }
 
-    @ApiOperation("get all topics with multiple tags. (AND relation)")
+    @Operation(description ="get all topics with multiple tags. (AND relation)")
     @GetMapping("/searchByTags")
     public ResponseEntity<List<Topic>> getTopicsByTag(@RequestParam List<String> tags){
 

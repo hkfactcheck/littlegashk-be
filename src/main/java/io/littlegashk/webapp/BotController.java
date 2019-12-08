@@ -7,8 +7,7 @@ import com.amazonaws.services.cognitoidp.model.AttributeType;
 import com.amazonaws.services.cognitoidp.model.UserType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,14 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/bot")
-@Api(value = "Bot")
 @Log4j2
 public class BotController {
 
 
   @Autowired
   AWSCognitoIdentityProvider cognito;
-  @ApiOperation("add user")
+  @Operation(description = "add user")
   @PostMapping("/user")
   public ResponseEntity<String> addUser(@RequestParam String username, @RequestParam String tgid, @RequestParam String tempPassword) throws JsonProcessingException {
     AdminCreateUserRequest req = new AdminCreateUserRequest()

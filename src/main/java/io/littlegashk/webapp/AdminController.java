@@ -20,12 +20,11 @@ import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.entity.UrlTopicId;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
+import io.littlegashk.webapp.repository.OldTagRepository;
 import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.repository.SequencedTopicCache;
-import io.littlegashk.webapp.repository.OldTagRepository;
 import io.littlegashk.webapp.repository.UrlRepository;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -59,7 +58,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/admin")
-@Api(value = "Admin")
 @Log4j2
 public class AdminController {
 
@@ -80,7 +78,7 @@ public class AdminController {
   @Autowired
   SequencedTopicCache sequencedTopicCache;
 
-  @ApiOperation("insert topic")
+  @Operation(description = "insert topic")
   @PostMapping("/topics")
   public ResponseEntity<Topic> addTopic(@RequestBody Topic topic) throws ParseException {
     String idDate = validateAndGetIdFormatDate(topic.getEventDate());
@@ -142,7 +140,7 @@ public class AdminController {
   }
 
 
-  @ApiOperation("delete a topic")
+  @Operation(description = "delete a topic")
   @DeleteMapping("/topics/{topicId}")
   public ResponseEntity<?> deleteTopic(@PathVariable String topicId) {
 
@@ -160,7 +158,7 @@ public class AdminController {
   }
 
 
-  @ApiOperation("edit topic")
+  @Operation(description = "edit topic")
   @PutMapping("/topics")
   public ResponseEntity<Topic> editTopic(@RequestBody Topic topic) {
 
@@ -188,7 +186,7 @@ public class AdminController {
     return ResponseEntity.ok(savedTopic);
   }
 
-  @ApiOperation("insert a progress")
+  @Operation(description = "insert a progress")
   @PostMapping("/topics/{parentTopicId}/progress")
   public ResponseEntity<Topic> addProgress(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic)
       throws ParseException {
@@ -205,7 +203,7 @@ public class AdminController {
     return ResponseEntity.ok(savedTopic);
   }
 
-  @ApiOperation("change topic sequence")
+  @Operation(description = "change topic sequence")
   @PutMapping("/topics/{topicId}/sequence")
   public ResponseEntity<?> changeSequence(HttpServletRequest req, @PathVariable String topicId, @RequestParam Integer sequence){
 
@@ -245,7 +243,7 @@ public class AdminController {
     }
   }
 
-  @ApiOperation("insert a public response")
+  @Operation(description = "insert a public response")
   @PostMapping("/topics/{parentTopicId}/response")
   public ResponseEntity<Topic> addResponse(HttpServletRequest req, @PathVariable String parentTopicId, @RequestBody Topic topic)
       throws ParseException {
@@ -262,7 +260,7 @@ public class AdminController {
     return ResponseEntity.ok(savedTopic);
   }
 
-  @ApiOperation("update event date")
+  @Operation(description = "update event date")
   @PostMapping("/topics/{oldTopicId}/changeDate")
   public ResponseEntity<Topic> changeDate(@PathVariable String oldTopicId, @RequestParam String newDate) throws ParseException {
     String idDate = validateAndGetIdFormatDate(newDate);

@@ -8,7 +8,7 @@ import com.vladmihalcea.hibernate.type.json.JsonNodeBinaryType;
 import com.vladmihalcea.hibernate.type.json.JsonNodeStringType;
 import com.vladmihalcea.hibernate.type.json.JsonStringType;
 import io.littlegashk.webapp.entity.EntryType;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -50,23 +50,22 @@ public class Topic {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @ApiModelProperty(position = 1, example = "2019-08-01|1565877016020")
+    @Schema(example = "2019-08-01|1565877016020")
     @EqualsAndHashCode.Include
     private UUID topicId;
 
-    @ApiModelProperty(position = 2, example="This is topic/progress title")
+    @Schema(example="This is topic/progress title")
     private String title;
 
-    @ApiModelProperty(position = 3, example="This is summary")
+    @Schema(example="This is summary")
     private String summary;
 
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(position = 5, example="TOPIC", notes = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,PUBLIC_RESPONSE}")
+    @Schema(example="TOPIC", description = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,RESPONSE}")
     private EntryType type;
 
     @Type(type = "string-array")
     @Column(columnDefinition = "VARCHAR ARRAY")
-    @ApiModelProperty(position = 6)
     private List<String> relatedFiles;
 
     @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
@@ -86,30 +85,24 @@ public class Topic {
     @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
     @Fetch(FetchMode.JOIN)
     @JoinTable(name="topic_reference",joinColumns = { @JoinColumn(name="topic_id")}, inverseJoinColumns = {@JoinColumn(name="reference_hash")})
-    @ApiModelProperty(position = 8)
     @BatchSize(size=25)
     private Set<Reference> references;
 
     @Type(type = "string-array")
     @Column(columnDefinition = "VARCHAR ARRAY")
-    @ApiModelProperty(position = 9)
     private String[] tags;
 
 
-    @ApiModelProperty(position = 11, example="Last updated timestamp")
+    @Schema(example="Last updated timestamp")
     private long lastUpdated;
 
 
-    @ApiModelProperty(position = 12)
     private LocalDateTime eventDate;
 
-    @ApiModelProperty(position = 13)
     private String imageUrl;
 
-    @ApiModelProperty(position = 14)
     private String uid;
 
-    @ApiModelProperty(position = 15)
     private Integer seq;
 
     private String oldId;

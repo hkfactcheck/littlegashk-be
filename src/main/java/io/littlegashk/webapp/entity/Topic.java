@@ -9,7 +9,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConvertedEnum;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConvertedJson;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.littlegashk.webapp.DynamoDbSchemaInitializer;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -28,8 +28,6 @@ public class Topic {
     private TopicId id;
 
     @DynamoDBHashKey(attributeName = "pid")
-    @ApiModelProperty(position = 1, example = "2019-08-01|1565877016020",
-            notes = "Treat as unique record Id. Contains event date and record creation timestamp")
     @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-pid-index")
     public String getTopicId() {
 
@@ -63,47 +61,39 @@ public class Topic {
 
 
     // Arbitrary fields below, change as you want :)
-    @ApiModelProperty(position = 2, example="This is topic/progress title")
+    @Schema(example="This is topic/progress title")
     private String title;
 
-    @ApiModelProperty(position = 3, example="This is summary")
+    @Schema(example="This is summary")
     private String summary;
 
     @DynamoDBTypeConvertedEnum
-    @ApiModelProperty(position = 5, example="TOPIC", notes = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,PUBLIC_RESPONSE}")
+    @Schema(example="TOPIC", description = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,RESPONSE}")
     private EntryType type;
 
     @DynamoDBTypeConvertedJson
-    @ApiModelProperty(position = 6)
     private List<String> relatedFiles;
 
     @DynamoDBTypeConvertedJson
-    @ApiModelProperty(position = 7)
     private Set<String> relatedTopics;
 
     @DynamoDbTypeConvertedReferenceList
-    @ApiModelProperty(position = 8)
     private List<Reference> references;
 
     @DynamoDBTypeConvertedJson
-    @ApiModelProperty(position = 9)
     private Set<String> tags;
 
     @DynamoDBIndexRangeKey(globalSecondaryIndexName ="sid-last-updated-index")
-    @ApiModelProperty(position = 11, example="Last updated timestamp")
+    @Schema(description="Last updated timestamp")
     private long lastUpdated;
 
 
-    @ApiModelProperty(position = 12)
     private String eventDate;
 
-    @ApiModelProperty(position = 13)
     private String imageUrl;
 
-    @ApiModelProperty(position = 14)
     private String uid;
 
-    @ApiModelProperty(position = 15)
     private Integer seq;
 
 
