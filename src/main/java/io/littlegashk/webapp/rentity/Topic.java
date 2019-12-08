@@ -96,6 +96,10 @@ public class Topic {
     @Column(columnDefinition = "VARCHAR ARRAY")
     private String[] tags;
 
+    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "topics")
+    @JsonIgnore
+    private Set<Tag> tagRecord;
+
 
     @Schema(example="Last updated timestamp")
     private long lastUpdated;

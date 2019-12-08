@@ -20,4 +20,8 @@ public interface TopicRepository extends JpaRepository<Topic, UUID>, QuerydslPre
   Page<Topic> findTopicsByParentsContainsAndTypeOrderByEventDateDesc(Topic parent, EntryType type, Pageable pageable);
 
   List<Topic> findAllBySeqIsNotNullOrderBySeqDesc();
+
+  Page<Topic> findByTagRecordContains(Pageable pageable, Tag tagRecord);
+
+  List<Topic> findAllByTagRecordIn(List<Tag> tagRecords);
 }
