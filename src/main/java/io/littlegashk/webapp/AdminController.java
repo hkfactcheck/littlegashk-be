@@ -20,9 +20,9 @@ import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.entity.UrlTopicId;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
+import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.repository.SequencedTopicCache;
-import io.littlegashk.webapp.repository.TagRepository;
-import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.repository.OldTagRepository;
 import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -64,10 +64,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminController {
 
   @Autowired
-  TopicRepository topicRepository;
+  OldTopicRepository topicRepository;
 
   @Autowired
-  TagRepository tagRepository;
+  OldTagRepository oldTagRepository;
   @Autowired
   ChildRelationRepository childRelationRepository;
 
@@ -105,8 +105,8 @@ public class AdminController {
     for (String t : topic.getTags()) {
       Page<TagTopic> page = null;
       do {
-        page = tagRepository.findAllWithTag(t, "9999", page == null ? 0 : page.nextPageable()
-                                                                              .getPageNumber());
+        page = oldTagRepository.findAllWithTag(t, "9999", page == null ? 0 : page.nextPageable()
+                                                                                 .getPageNumber());
         page.stream()
             .filter(tt -> !tt.getTopicId()
                              .equals(topic.getTopicId()) && topicRepository.findById(TopicId.of(tt.getTopicId()))
@@ -316,10 +316,10 @@ public class AdminController {
     });
 
     //Change all tag topic association
-    tagRepository.findTopicTags(oldTopicId).stream().forEach(tt->{
-      tagRepository.delete(tt);
+    oldTagRepository.findTopicTags(oldTopicId).stream().forEach(tt->{
+      oldTagRepository.delete(tt);
       tt.setTopicId(newTopicId);
-      tagRepository.save(tt);
+      oldTagRepository.save(tt);
     });
 
     //Change all url topic association
@@ -379,7 +379,7 @@ public class AdminController {
                                          .map(TagTopic::new)
                                          .collect(Collectors.toSet());
 
-      tagRepository.deleteAll(currentSet);
+      oldTagRepository.deleteAll(currentSet);
     }
   }
 
@@ -394,7 +394,7 @@ public class AdminController {
                                         .map(TagTopic::new)
                                         .collect(Collectors.toSet());
 
-      tagRepository.saveAll(newTagList);
+      oldTagRepository.saveAll(newTagList);
     }
   }
 

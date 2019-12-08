@@ -11,14 +11,13 @@ import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
 import io.littlegashk.webapp.entity.UrlTopic;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
+import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.repository.SequencedTopicCache;
-import io.littlegashk.webapp.repository.TagRepository;
-import io.littlegashk.webapp.repository.TopicRepository;
+import io.littlegashk.webapp.repository.OldTagRepository;
 import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.sound.midi.Sequence;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -46,10 +44,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class TopicController {
 
   @Autowired
-  TopicRepository repository;
+  OldTopicRepository repository;
 
   @Autowired
-  TagRepository tagRepository;
+  OldTagRepository oldTagRepository;
 
   @Autowired
   UrlRepository urlRepository;

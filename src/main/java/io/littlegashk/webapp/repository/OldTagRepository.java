@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 
 @EnableScan
-public interface TagRepository extends DynamoDBPagingAndSortingRepository<TagTopic, TagTopicId> {
+public interface OldTagRepository extends DynamoDBPagingAndSortingRepository<TagTopic, TagTopicId> {
 
     Page<TagTopic> findAllByTag(String tag, Pageable pageable);
 

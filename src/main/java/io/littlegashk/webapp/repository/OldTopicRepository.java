@@ -16,7 +16,7 @@ import org.springframework.data.domain.Sort;
 
 
 @EnableScan
-public interface TopicRepository extends DynamoDBCrudRepository<Topic, TopicId> {
+public interface OldTopicRepository extends DynamoDBCrudRepository<Topic, TopicId> {
 
   Page<Topic> findTopicsBySortKeyAndLastUpdatedIsBefore(String sortKey, long lastUpdated, Pageable pageable);
 

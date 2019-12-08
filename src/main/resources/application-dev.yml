@@ -9,3 +9,9 @@ logging:
 
 dynamodb:
   endpoint: http://localhost:8000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres

@@ -6,6 +6,19 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://cognito-idp.us-east-2.amazonaws.com/us-east-2_IUuEJR8MY
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+      naming:
+        physical-strategy: com.vladmihalcea.hibernate.type.util.CamelCaseToSnakeCaseNamingStrategy
+  datasource:
+    url: jdbc:postgresql://hkfc.ct7jlst36sd2.ap-southeast-1.rds.amazonaws.com:5432/littlegas
+    username: demo
+    password: QlJZJOuFV0DJl134aky2
 
 cloud:
   aws:

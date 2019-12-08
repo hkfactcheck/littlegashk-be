@@ -14,9 +14,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableDynamoDBRepositories(basePackages = "io.littlegashk.webapp.repository")
+@EnableJpaRepositories(basePackages = "io.littlegashk.webapp.rentity")
+@EnableTransactionManagement
 public class DynamoDBConfig {
 
     @Value("${dynamodb.endpoint:#{null}}")
