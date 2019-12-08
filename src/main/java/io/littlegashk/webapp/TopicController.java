@@ -1,34 +1,31 @@
 package io.littlegashk.webapp;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.google.common.collect.Lists;
-import io.littlegashk.webapp.entity.ChildRelation;
 import io.littlegashk.webapp.entity.EntryType;
-import io.littlegashk.webapp.entity.Topic;
-import io.littlegashk.webapp.entity.TopicId;
-import io.littlegashk.webapp.entity.UrlTopic;
+import io.littlegashk.webapp.rentity.Reference;
+import io.littlegashk.webapp.rentity.ReferenceRepository;
+import io.littlegashk.webapp.rentity.Topic;
+import io.littlegashk.webapp.rentity.TopicRepository;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
-import io.littlegashk.webapp.repository.OldTagRepository;
-import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.repository.SequencedTopicCache;
 import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import java.util.Comparator;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,11 +38,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Log4j2
 public class TopicController {
 
-  @Autowired
-  OldTopicRepository repository;
 
   @Autowired
-  OldTagRepository oldTagRepository;
+  TopicRepository topicRepository;
 
   @Autowired
   UrlRepository urlRepository;
@@ -56,23 +51,31 @@ public class TopicController {
   @Autowired
   SequencedTopicCache sequencedTopicCache;
 
+  @Autowired
+  ReferenceRepository referenceRepository;
+
 
   @Operation(description = "get all topics, sorted by lastUpdated date desc")
   @GetMapping
-  public ResponseEntity<Page<Topic>> getTopics(@Parameter(example = "1565883488250") @RequestParam(required = false) Long lastUpdated,
-                                               @Parameter(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
+  public ResponseEntity<Page<Topic>> getTopics(@RequestParam(required = false) Long lastUpdated,
+                                               @RequestParam(required = false, defaultValue = "0") Integer page) {
 
-    Page<Topic> allTopic = repository.getAllTopicUpdatedBefore(lastUpdated == null ? Long.MAX_VALUE : lastUpdated, page);
+    Page<Topic> allTopic = topicRepository.findByTypeAndLastUpdatedBeforeOrderByLastUpdatedDesc(EntryType.TOPIC,
+                                                                                                lastUpdated == null ? Long.MAX_VALUE : lastUpdated,
+                                                                                                PageRequest.of(page, 10));
     return ResponseEntity.ok(allTopic);
   }
 
   @Operation(description = "get all topics with specified date, sorted by topicId desc")
   @GetMapping("/date/{date}")
   public ResponseEntity<Map<String, Object>> getTopicsByDate(@Parameter(example = "2019-08-01") @PathVariable String date) {
+
     Map<String, Object> result = new HashMap<>();
     result.put("date", date);
-    Page<Topic> allTopic = repository.getAllTopicByEventDate(date.replaceAll("-",""));
-    result.put("topics", allTopic.getContent());
+    LocalDateTime start = LocalDateTime.parse(date + " 00:00:00", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    LocalDateTime end = LocalDateTime.parse(date + " 23:59:59", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    List<Topic> allTopic = topicRepository.findAllByEventDateBetweenOrderByEventDateDesc(start, end);
+    result.put("topics", allTopic);
     return ResponseEntity.ok(result);
   }
 
@@ -80,14 +83,13 @@ public class TopicController {
   @Operation(description = "get all topics/progresses/responses with specified url")
   @GetMapping("/url")
   public ResponseEntity<List<Topic>> getTopicsByUrl(@Parameter(example = "https://google.com") @RequestParam String url) {
-
-    Page<UrlTopic> allTopic = urlRepository.findAllWithUrl(url.trim(), 0);
-    Iterable<Topic> topics = repository.findAllById(allTopic.get()
-                                                            .map(UrlTopic::getTopicId)
-                                                            .flatMap(s -> Stream.of(TopicId.of(s, EntryType.TOPIC), TopicId.of(s, EntryType.PROGRESS),
-                                                                                    TopicId.of(s, EntryType.RESPONSE)))
-                                                            .collect(Collectors.toList()));
-    return ResponseEntity.ok(Lists.newArrayList(topics));
+    Optional<Reference> reference = referenceRepository.findById(DigestUtils.md5Hex(url));
+    if (reference.isEmpty()) {
+      return ResponseEntity.ok(new ArrayList<>());
+    } else {
+      return ResponseEntity.ok(new ArrayList<>(reference.get()
+                                                        .getTopics()));
+    }
   }
 
   @Autowired
@@ -97,60 +99,53 @@ public class TopicController {
   @GetMapping("/top-level-by-url")
   public ResponseEntity<List<Topic>> getTopLevelByUrl(@Parameter(example = "https://google.com") @RequestParam String url) {
 
-    Page<UrlTopic> allTopic = urlRepository.findAllWithUrl(url.trim(), 0);
-    Iterable<Topic> topics = repository.findAllById(allTopic.get()
-                                                            .map(UrlTopic::getTopicId)
-                                                            .flatMap(s -> Stream.of(TopicId.of(s, EntryType.TOPIC), TopicId.of(s, EntryType.PROGRESS),
-                                                                                    TopicId.of(s, EntryType.RESPONSE)))
-                                                            .collect(Collectors.toList()));
-    Set<String> bulkFetchTopicIds = new HashSet<>();
-    for (Topic topic : topics) {
-      if (topic.getType() == EntryType.TOPIC) {
-        bulkFetchTopicIds.add(topic.getTopicId());
-      } else {
-        String tid = topic.getTopicId();
-        String sid = topic.getType()
-                          .name() + "|" + tid;
-        QueryResult result = db.query(new QueryRequest().withTableName(DynamoDbSchemaInitializer.TABLE_LITTLEGAS)
-                                                        .withIndexName("sid-pid-index")
-                                                        .withKeyConditionExpression("sid = :sid")
-                                                        .withExpressionAttributeValues(Map.of(":sid", new AttributeValue().withS(sid))));
-        bulkFetchTopicIds.addAll(result.getItems()
-                                       .stream()
-                                       .map(m -> m.get("pid")
-                                                  .getS())
-                                       .collect(Collectors.toSet()));
-      }
+    Optional<Reference> reference = referenceRepository.findById(DigestUtils.md5Hex(url));
+    if (reference.isEmpty()) {
+      return ResponseEntity.ok(new ArrayList<>());
+    } else {
+      Set<Topic> topLevel = new HashSet<>();
+      reference.get()
+               .getTopics()
+               .stream()
+               .forEach(t -> {
+                 if (t.getType() == EntryType.TOPIC) {
+                   topLevel.add(t);
+                 } else {
+                   topLevel.addAll(t.getParents());
+                 }
+               });
+      return ResponseEntity.ok(new ArrayList<>(topLevel));
     }
-    Iterable<Topic> parents = repository.findAllById(bulkFetchTopicIds.stream()
-                                                                      .map(TopicId::of)
-                                                                      .collect(Collectors.toList()));
-
-    return ResponseEntity.ok(Lists.newArrayList(parents));
   }
 
   @Operation(description = "get specific topic with topicId")
   @GetMapping("/{topicId}")
-  public ResponseEntity<Topic> getTopicByTopicId(@Parameter(example = "2019-08-01|1565877016020") @PathVariable String topicId) {
+  public ResponseEntity<Topic> getTopicByTopicId(@Parameter(example = "95ad3949-b189-4d71-9d64-4264063d6ce8") @PathVariable String topicId) {
 
-    return ResponseEntity.ok(repository.findByTopicId(topicId));
+    Optional<Topic> topic = topicRepository.findById(UUID.fromString(topicId));
+    if (topic.isEmpty()) {
+      return ResponseEntity.notFound()
+                           .build();
+    } else {
+      return ResponseEntity.ok(topic.get());
+    }
   }
 
   @Operation(description = "get topic progresses")
   @GetMapping("/{topicId}/progress")
-  public ResponseEntity<Page<Topic>> getAllTopicProgress(@Parameter(example = "2019-08-01|1565877016020") @PathVariable String topicId,
+  public ResponseEntity<Page<Topic>> getAllTopicProgress(@Parameter(example = "95ad3949-b189-4d71-9d64-4264063d6ce8") @PathVariable String topicId,
                                                          @RequestParam(required = false, defaultValue = "9999") String lastChildId,
                                                          @Parameter(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
-    Page<ChildRelation> relations = childRelationRepository.getProgress(topicId, lastChildId, page);
-    List<TopicId> childIds = relations.stream()
-                                      .map(ChildRelation::getChildTopicId)
-                                      .map(s -> TopicId.of(s, EntryType.PROGRESS))
-                                      .collect(Collectors.toList());
-    Iterable<Topic> topics = repository.findAllById(childIds);
-    List<Topic> result = Lists.newArrayList(topics);
-    result.sort(Comparator.comparing(Topic::getTopicId).reversed());
-    return ResponseEntity.ok(new PageImpl<>(result, relations.getPageable(), relations.getTotalElements()));
+    Optional<Topic> topic = topicRepository.findById(UUID.fromString(topicId));
+    if (topic.isEmpty()) {
+      return ResponseEntity.notFound()
+                           .build();
+    } else {
+      Page<Topic> progresses = topicRepository.findTopicsByParentsContainsAndTypeOrderByEventDateDesc(topic.get(), EntryType.PROGRESS,
+                                                                                                      PageRequest.of(page, 10));
+      return ResponseEntity.ok(progresses);
+    }
   }
 
   @Operation(description = "get public responses on a topic")
@@ -159,29 +154,23 @@ public class TopicController {
                                                          @RequestParam(required = false, defaultValue = "9999") String lastChildId,
                                                          @Parameter(example = "0") @RequestParam(required = false, defaultValue = "0") Integer page) {
 
-    Page<ChildRelation> relations = childRelationRepository.getResponse(topicId, lastChildId, page);
-    List<TopicId> childIds = relations.stream()
-                                      .map(ChildRelation::getChildTopicId)
-                                      .map(s -> TopicId.of(s, EntryType.RESPONSE))
-                                      .collect(Collectors.toList());
-    Iterable<Topic> topics = repository.findAllById(childIds);
-    List<Topic> result = Lists.newArrayList(topics);
-    result.sort(Comparator.comparing(Topic::getTopicId).reversed());
-    return ResponseEntity.ok(new PageImpl<>(result, relations.getPageable(), relations.getTotalElements()));
+    Optional<Topic> topic = topicRepository.findById(UUID.fromString(topicId));
+    if (topic.isEmpty()) {
+      return ResponseEntity.notFound()
+                           .build();
+    } else {
+      Page<Topic> progresses = topicRepository.findTopicsByParentsContainsAndTypeOrderByEventDateDesc(topic.get(), EntryType.RESPONSE,
+                                                                                                      PageRequest.of(page, 10));
+      return ResponseEntity.ok(progresses);
+    }
   }
 
 
-  @Operation(description = "get public responses on a topic")
+  @Operation(description = "get topics having a sequence code")
   @GetMapping("/sequenced")
-  public ResponseEntity<List<Topic>> getSequencedTopic(){
-    Set<String> topicIds = sequencedTopicCache.getSequencedTopicIds();
-    Iterable<Topic> topics = repository.findAllById(topicIds.stream().map(TopicId::of).collect(Collectors.toList()));
-    List<Topic> allTopics = Lists.newArrayList(topics);
-    allTopics.sort(Comparator.comparing(Topic::getSeq).reversed());
-    return ResponseEntity.ok(allTopics);
-
+  public ResponseEntity<List<Topic>> getSequencedTopic() {
+    return ResponseEntity.ok(topicRepository.findAllBySeqIsNotNullOrderBySeqDesc());
   }
-
 
 
 }

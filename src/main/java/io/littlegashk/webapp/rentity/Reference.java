@@ -1,11 +1,6 @@
 package io.littlegashk.webapp.rentity;
 
-import com.vladmihalcea.hibernate.type.array.IntArrayType;
-import com.vladmihalcea.hibernate.type.array.StringArrayType;
-import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import com.vladmihalcea.hibernate.type.json.JsonNodeBinaryType;
-import com.vladmihalcea.hibernate.type.json.JsonNodeStringType;
-import com.vladmihalcea.hibernate.type.json.JsonStringType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
@@ -42,5 +37,6 @@ public class Reference {
     private String imageUrl;
 
     @ManyToMany(mappedBy = "references", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Topic> topics = new HashSet<>();
 }

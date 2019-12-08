@@ -5,14 +5,23 @@ server:
 
 logging:
   level:
-    root: debug
+    root: INFO
+    org:
+      apache:
+        http:
+          wire: ERROR
+      springframework:
+        boot:
+          autoconfigure: ERROR
+      hibernate:
+        type: TRACE
 
 dynamodb:
   endpoint: http://localhost:8000
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/littlegas
     username: postgres
     password: postgres
   jpa:

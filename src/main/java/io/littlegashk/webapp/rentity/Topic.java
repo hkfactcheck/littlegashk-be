@@ -1,5 +1,6 @@
 package io.littlegashk.webapp.rentity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vladmihalcea.hibernate.type.array.IntArrayType;
 import com.vladmihalcea.hibernate.type.array.StringArrayType;
@@ -22,9 +23,11 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.BatchSize;
@@ -46,6 +49,7 @@ import org.hibernate.annotations.TypeDefs;
     @TypeDef(name="string",defaultForType=java.lang.String.class,typeClass=org.hibernate.type.TextType.class)
 })
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Table(indexes = {@Index(name = "idx_topic_lastupdated", columnList = "type, lastUpdated", unique = false)})
 public class Topic {
 
     @Id
@@ -96,7 +100,7 @@ public class Topic {
     @Schema(example="Last updated timestamp")
     private long lastUpdated;
 
-
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
 
     private String imageUrl;
