@@ -13,8 +13,6 @@ logging:
       springframework:
         boot:
           autoconfigure: ERROR
-      hibernate:
-        type: TRACE
 
 dynamodb:
   endpoint: http://localhost:8000

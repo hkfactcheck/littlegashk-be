@@ -5,6 +5,8 @@ import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.TagTopic;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.TopicId;
+import io.littlegashk.webapp.rentity.Tag;
+import io.littlegashk.webapp.rentity.TagRepository;
 import io.littlegashk.webapp.repository.OldTagRepository;
 import io.littlegashk.webapp.repository.OldTopicRepository;
 import io.littlegashk.webapp.util.CommonUtils;
@@ -36,11 +38,17 @@ public class TagController {
     @Autowired
     OldTagRepository oldTagRepository;
 
+    @Autowired
+    TagRepository tagRepository;
+
     @Operation(description = "get all tags in the DB")
     @GetMapping
     public ResponseEntity<Set<String>> getTags() {
 
-        return ResponseEntity.ok(oldTagRepository.findAllTags());
+        return ResponseEntity.ok(tagRepository.findAll()
+                                              .stream()
+                                              .map(Tag::getTag)
+                                              .collect(Collectors.toSet()));
     }
 
     @Operation(description ="get all topics with specified tag")
