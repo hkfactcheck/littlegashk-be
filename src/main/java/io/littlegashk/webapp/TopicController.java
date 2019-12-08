@@ -1,6 +1,5 @@
 package io.littlegashk.webapp;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.rentity.Reference;
 import io.littlegashk.webapp.rentity.ReferenceRepository;
@@ -91,9 +90,6 @@ public class TopicController {
                                                         .getTopics()));
     }
   }
-
-  @Autowired
-  AmazonDynamoDB db;
 
   @Operation(description = "return all TOP LEVEL topics with children containing the given URL ")
   @GetMapping("/top-level-by-url")
