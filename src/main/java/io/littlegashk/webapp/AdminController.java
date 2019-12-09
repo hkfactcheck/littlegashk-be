@@ -98,8 +98,6 @@ public class AdminController {
     topic.setLastUpdated(topic.getEventDate()
                               .toEpochSecond(ZoneOffset.ofHours(8)));
     updateReference(topic);
-    topic.getParents()
-         .add(parent);
     Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
     parent.getChildren()
