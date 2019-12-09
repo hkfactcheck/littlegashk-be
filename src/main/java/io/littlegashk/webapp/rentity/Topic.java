@@ -11,6 +11,7 @@ import com.vladmihalcea.hibernate.type.json.JsonStringType;
 import io.littlegashk.webapp.entity.EntryType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,81 +40,79 @@ import org.hibernate.annotations.TypeDefs;
 
 @Entity
 @Data
-@TypeDefs({
-    @TypeDef(name = "string-array", typeClass = StringArrayType.class),
-    @TypeDef(name = "int-array", typeClass = IntArrayType.class),
-    @TypeDef(name = "json", typeClass = JsonStringType.class),
-    @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class),
-    @TypeDef(name = "jsonb-node", typeClass = JsonNodeBinaryType.class),
-    @TypeDef(name = "json-node", typeClass = JsonNodeStringType.class),
-    @TypeDef(name="string",defaultForType=java.lang.String.class,typeClass=org.hibernate.type.TextType.class)
-})
+@TypeDefs({@TypeDef(name = "string-array", typeClass = StringArrayType.class), @TypeDef(name = "int-array", typeClass = IntArrayType.class),
+    @TypeDef(name = "json", typeClass = JsonStringType.class), @TypeDef(name = "jsonb", typeClass = JsonBinaryType.class),
+    @TypeDef(name = "jsonb-node", typeClass = JsonNodeBinaryType.class), @TypeDef(name = "json-node", typeClass = JsonNodeStringType.class),
+    @TypeDef(name = "string", defaultForType = java.lang.String.class, typeClass = org.hibernate.type.TextType.class)})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Table(indexes = {@Index(name = "idx_topic_lastupdated", columnList = "type, lastUpdated", unique = false)})
+@Table(indexes = {@Index(name = "idx_topic_cat_lastupdated", columnList = "type,category,lastUpdated", unique = false)})
 public class Topic {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Schema(example = "2019-08-01|1565877016020")
-    @EqualsAndHashCode.Include
-    private UUID topicId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Schema(example = "2019-08-01|1565877016020")
+  @EqualsAndHashCode.Include
+  private UUID topicId;
 
-    @Schema(example="This is topic/progress title")
-    private String title;
+  @Schema(example = "This is topic/progress title")
+  private String title;
 
-    @Schema(example="This is summary")
-    private String summary;
+  @Schema(example = "This is summary")
+  private String summary;
 
-    @Enumerated(EnumType.STRING)
-    @Schema(example="TOPIC", description = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,RESPONSE}")
-    private EntryType type;
+  @Enumerated(EnumType.STRING)
+  @Schema(example = "TOPIC", description = "Not required when add or edit", allowableValues = "{TOPIC,PROGRESS,RESPONSE}")
+  private EntryType type;
 
-    @Type(type = "string-array")
-    @Column(columnDefinition = "VARCHAR ARRAY")
-    private List<String> relatedFiles;
+  @Type(type = "string-array")
+  @Column(columnDefinition = "VARCHAR ARRAY")
+  private List<String> relatedFiles;
 
-    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
-    @JoinTable(name="topic_relation",joinColumns = { @JoinColumn(name="topic_id")}, inverseJoinColumns = {@JoinColumn(name="related_topic_id")})
-    @JsonIgnore
-    private Set<Topic> relatedTopics;
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+  @JoinTable(name = "topic_relation", joinColumns = {@JoinColumn(name = "topic_id")}, inverseJoinColumns = {@JoinColumn(name = "related_topic_id")})
+  @JsonIgnore
+  private Set<Topic> relatedTopics = new HashSet<>();
 
-    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY)
-    @JoinTable(name="topic_hierarchy",joinColumns = { @JoinColumn(name="topic_id")}, inverseJoinColumns = {@JoinColumn(name="child_topic_id")})
-    @JsonIgnore
-    private Set<Topic> children;
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+  @JoinTable(name = "topic_hierarchy", joinColumns = {@JoinColumn(name = "topic_id")}, inverseJoinColumns = {@JoinColumn(name = "child_topic_id")})
+  @JsonIgnore
+  private Set<Topic> children = new HashSet<>();
 
-    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "children")
-    @JsonIgnore
-    private Set<Topic> parents;
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+  @JoinTable(name = "topic_hierarchy", joinColumns = {@JoinColumn(name = "child_topic_id")}, inverseJoinColumns = {@JoinColumn(name = "topic_id")})
+  @JsonIgnore
+  private Set<Topic> parents = new HashSet<>();
 
-    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.EAGER)
-    @Fetch(FetchMode.JOIN)
-    @JoinTable(name="topic_reference",joinColumns = { @JoinColumn(name="topic_id")}, inverseJoinColumns = {@JoinColumn(name="reference_hash")})
-    @BatchSize(size=25)
-    private Set<Reference> references;
+  @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+  @Fetch(FetchMode.JOIN)
+  @JoinTable(name = "topic_reference", joinColumns = {@JoinColumn(name = "topic_id")}, inverseJoinColumns = {@JoinColumn(name = "reference_hash")})
+  @BatchSize(size = 25)
+  private Set<Reference> references = new HashSet<>();
 
-    @Type(type = "string-array")
-    @Column(columnDefinition = "VARCHAR ARRAY")
-    private String[] tags;
+  @Type(type = "string-array")
+  @Column(columnDefinition = "VARCHAR ARRAY")
+  private String[] tags;
 
-    @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "topics")
-    @JsonIgnore
-    private Set<Tag> tagRecord;
+  @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "topics")
+  @JsonIgnore
+  private Set<Tag> tagRecord;
 
 
-    @Schema(example="Last updated timestamp")
-    private long lastUpdated;
+  @Schema(example = "Last updated timestamp")
+  private long lastUpdated;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime eventDate;
+  @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+  private LocalDateTime eventDate;
 
-    private String imageUrl;
+  private String imageUrl;
 
-    private String uid;
+  private String uid;
 
-    private Integer seq;
+  private Integer seq;
 
-    private String oldId;
+  private String oldId;
+
+  private Integer category;
 
 
 }

@@ -20,7 +20,6 @@ import io.littlegashk.webapp.entity.EntryType;
 import io.littlegashk.webapp.entity.Reference;
 import io.littlegashk.webapp.entity.Topic;
 import io.littlegashk.webapp.entity.UrlTopic;
-import io.littlegashk.webapp.rentity.Tag;
 import io.littlegashk.webapp.rentity.TopicMapper;
 import io.littlegashk.webapp.repository.ChildRelationRepository;
 import io.littlegashk.webapp.repository.OldTopicRepository;
@@ -28,7 +27,6 @@ import io.littlegashk.webapp.repository.UrlRepository;
 import io.littlegashk.webapp.service.MigrationService;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -157,21 +155,6 @@ public class DynamoDbSchemaInitializer implements ApplicationListener<ContextRef
             }
           }
         }
-      }
-    });
-
-    migrate("M2", () -> {
-      List<Topic> allTopics = new ArrayList<>();
-      Page<Topic> topics = topicRepository.findTopicsBySortKeyIn(PageRequest.of(0, 10), "TOPIC");
-      allTopics.addAll(topics.getContent());
-      while (topics.hasNext()) {
-        topics = topicRepository.findTopicsBySortKeyIn(topics.nextPageable(), "TOPIC");
-        allTopics.addAll(topics.getContent());
-      }
-
-      for (Topic topic : allTopics) {
-        controller.findAndAddRelatedTopic(topic);
-        topicRepository.save(topic);
       }
     });
 

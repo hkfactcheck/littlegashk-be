@@ -9,6 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 
@@ -39,4 +40,9 @@ public class Reference {
     @ManyToMany(mappedBy = "references", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<Topic> topics = new HashSet<>();
+
+  public void setLink(String link) {
+    this.link = link;
+    this.hash = DigestUtils.md5Hex(link);
+  }
 }
