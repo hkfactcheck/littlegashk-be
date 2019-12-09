@@ -5,9 +5,6 @@ import io.littlegashk.webapp.rentity.Reference;
 import io.littlegashk.webapp.rentity.ReferenceRepository;
 import io.littlegashk.webapp.rentity.Topic;
 import io.littlegashk.webapp.rentity.TopicRepository;
-import io.littlegashk.webapp.repository.ChildRelationRepository;
-import io.littlegashk.webapp.repository.SequencedTopicCache;
-import io.littlegashk.webapp.repository.UrlRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.time.LocalDateTime;
@@ -41,14 +38,6 @@ public class TopicController {
   @Autowired
   TopicRepository topicRepository;
 
-  @Autowired
-  UrlRepository urlRepository;
-
-  @Autowired
-  ChildRelationRepository childRelationRepository;
-
-  @Autowired
-  SequencedTopicCache sequencedTopicCache;
 
   @Autowired
   ReferenceRepository referenceRepository;

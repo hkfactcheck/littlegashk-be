@@ -1,6 +1,5 @@
 package io.littlegashk.webapp;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -45,9 +44,6 @@ public class AdminController {
 
   @Autowired
   TopicRepository topicRepository;
-
-  @Autowired
-  AmazonDynamoDB db;
 
   @Autowired
   ReferenceRepository referenceRepository;
