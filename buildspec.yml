@@ -3,10 +3,10 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      java: openjdk11
+      java: corretto11
   build:
     commands:
-      - mvn clean package
+      - mvn -B clean package
 
 artifacts:
   files:
