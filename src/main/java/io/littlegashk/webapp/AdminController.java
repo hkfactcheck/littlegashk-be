@@ -25,6 +25,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -202,6 +203,21 @@ public class AdminController {
       return ResponseEntity.notFound()
                            .build();
     }
+  }
+
+  @Operation(description = "migrateTag")
+  @PutMapping("/tags/{oldTag}/migrate")
+  public ResponseEntity<?> migrateTag(@PathVariable String oldTag, @RequestParam String newTag) {
+    List<Topic> topics = topicRepository.findAllByTagRecordIn(List.of(new Tag().setTag(oldTag)));
+    topics.forEach(t -> {
+      String[] tags = t.getTags();
+      tags = ArrayUtils.removeElement(tags, oldTag);
+      tags = ArrayUtils.add(tags, newTag);
+      t.setTags(tags);
+      saveTags(t);
+    });
+    tagRepository.deleteById(oldTag);
+    return ResponseEntity.ok(null);
   }
 
 
