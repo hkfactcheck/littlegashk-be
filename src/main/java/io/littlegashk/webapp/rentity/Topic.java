@@ -93,7 +93,8 @@ public class Topic {
   @Column(columnDefinition = "VARCHAR ARRAY")
   private String[] tags;
 
-  @ManyToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "topics")
+  @ManyToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
+  @JoinTable(name = "tag_topics", joinColumns = {@JoinColumn(name = "topic_id")}, inverseJoinColumns = {@JoinColumn(name = "tag")})
   @JsonIgnore
   private Set<Tag> tagRecord;
 

@@ -220,6 +220,14 @@ public class AdminController {
     return ResponseEntity.ok(null);
   }
 
+  @Operation(hidden = true)
+  @PutMapping("/tags/fix")
+  public ResponseEntity<?> fixTags() {
+    List<Topic> topics = topicRepository.findAll();
+    topics.forEach(this::saveTags);
+    return ResponseEntity.ok(null);
+  }
+
 
   private void saveTags(Topic updated) {
 
@@ -228,6 +236,7 @@ public class AdminController {
                               .map(s -> tagRepository.findById(s)
                                                      .orElse(new Tag().setTag(s)))
                               .collect(Collectors.toSet());
+      tagRepository.saveAll(tagSet);
       updated.setTagRecord(tagSet);
       topicRepository.save(updated);
     }
