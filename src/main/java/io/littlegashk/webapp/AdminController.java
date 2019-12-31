@@ -58,7 +58,7 @@ public class AdminController {
 
     topic.setType(EntryType.TOPIC);
     topic.setLastUpdated(topic.getEventDate()
-                              .toEpochSecond(ZoneOffset.ofHours(8)));
+                              .toEpochSecond(ZoneOffset.ofHours(8)) * 1000);
     updateReference(topic);
     final Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
@@ -97,7 +97,7 @@ public class AdminController {
     }
     topic.setType(response);
     topic.setLastUpdated(topic.getEventDate()
-                              .toEpochSecond(ZoneOffset.ofHours(8)));
+                              .toEpochSecond(ZoneOffset.ofHours(8)) * 1000);
     updateReference(topic);
     Topic savedTopic = topicRepository.save(topic);
     saveTags(savedTopic);
